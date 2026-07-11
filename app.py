@@ -530,15 +530,41 @@ with c:
 
 st.write("")
 
+def section_header(icon, title, subtitle, accent):
+    st.markdown(f"""
+    <div style="
+        background:linear-gradient(135deg,{accent},#2A2019);
+        padding:22px;
+        border-radius:18px;
+        margin-bottom:20px;
+        border-left:6px solid #D9A066;
+        box-shadow:0 10px 25px rgba(0,0,0,.25);
+    ">
+        <h2 style="margin:0;color:white;">
+            {icon} {title}
+        </h2>
+        <p style="
+            margin-top:8px;
+            color:#E6D7C8;
+            font-size:15px;
+        ">
+            {subtitle}
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
 ])
 
 # ==================== TAB 1 ====================
 with tab1:
-    st.header("Study Chat")
-    st.caption("Ask anything about your curriculum. No token limits.")
-
+section_header(
+    "💬",
+    "Study Chat",
+    "Ask anything about your Scaler journey. NexusAI remembers your learning context.",
+    "#385C7A"
+)
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
@@ -599,7 +625,12 @@ For anything outside this scope, redirect to the relevant topic."""
 
 # ==================== TAB 2 ====================
 with tab2:
-    st.header("GapFinder 🎯")
+    section_header(
+    "🎯",
+    "GapFinder",
+    "Identify weak concepts and automatically generate targeted practice.",
+    "#7A5636"
+)
     st.caption("Get a problem, solve it, get evaluated. Weakness tracked automatically.")
 
     weak_topics = get_weak_topics(st.session_state.db["gap_log"])
@@ -691,7 +722,12 @@ Be strict. Do not give 2 unless genuinely correct."""
 
 # ==================== TAB 3 ====================
 with tab3:
-    st.header("FlowState ⚡")
+    section_header(
+    "⚡",
+    "FlowState",
+    "Enter deep work mode with distraction-free coding sessions.",
+    "#5C4B8A"
+)
     st.caption("3PM–11PM | Check-in at 7PM | End of day at 11PM")
 
     today = datetime.now().strftime("%Y-%m-%d")
@@ -806,7 +842,12 @@ Give:
 
 # ==================== TAB 4 ====================
 with tab4:
-    st.header("Dashboard 📊")
+    section_header(
+    "📊",
+    "Dashboard",
+    "Track your progress and monitor long-term consistency.",
+    "#2E6B52"
+)
     st.caption("Your progress at a glance.")
 
     db = st.session_state.db
@@ -878,7 +919,12 @@ with tab4:
 
 # ==================== TAB 5 ====================
 with tab5:
-    st.header("Mock Interview 🎤")
+    section_header(
+    "🎤",
+    "Mock Interview",
+    "Practice technical interviews and receive AI-powered feedback.",
+    "#7A3F3F"
+)
     st.caption("Interview-format questions. Evaluated at the hiring bar.")
 
     db = st.session_state.db
