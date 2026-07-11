@@ -6,34 +6,205 @@ import requests
 st.set_page_config(page_title="NexusAI", layout="wide")
 st.markdown("""
 <style>
-    .stApp { background-color: #0e1117; color: #ffffff; }
-    h1 { background: linear-gradient(90deg, #00d4ff, #7b2ff7);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        font-size: 3rem !important; font-weight: 800 !important; }
-    .stTabs [data-baseweb="tab-list"] { gap: 8px; background-color: #1a1d27;
-        padding: 8px; border-radius: 12px; }
-    .stTabs [data-baseweb="tab"] { background-color: #252836; border-radius: 8px;
-        color: #ffffff; padding: 8px 20px; font-weight: 600; }
-    .stTabs [aria-selected="true"] { background: linear-gradient(90deg, #00d4ff, #7b2ff7) !important;
-        color: #ffffff !important; }
-    .stButton > button { background: linear-gradient(90deg, #00d4ff, #7b2ff7);
-        color: white; border: none; border-radius: 8px; padding: 10px 24px;
-        font-weight: 600; width: 100%; transition: opacity 0.2s; }
-    .stButton > button:hover { opacity: 0.85; }
-    .stTextInput > div > div > input,
-    .stTextArea > div > div > textarea { background-color: #1a1d27;
-        border: 1px solid #2d3148; border-radius: 8px; color: #ffffff; }
-    .stSelectbox > div > div { background-color: #1a1d27;
-        border: 1px solid #2d3148; border-radius: 8px; color: #ffffff; }
-    .stChatMessage { background-color: #1a1d27; border-radius: 12px;
-        border: 1px solid #2d3148; margin: 4px 0; }
-    h2, h3 { color: #00d4ff; font-weight: 700; }
-    .stCaption { color: #8892b0; }
+    /* Base */
+    .stApp {
+        background-color: #0a0a0f;
+        color: #e0e0e0;
+    }
+    
+    /* Title */
+    h1 {
+        background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 2.2rem !important;
+        font-weight: 900 !important;
+        letter-spacing: -1px;
+        margin-bottom: 0 !important;
+    }
+    
+    /* Subheader */
+    .stSubheader, h2 {
+        color: #7b2ff7 !important;
+        font-size: 1rem !important;
+        font-weight: 500 !important;
+        margin-top: 0 !important;
+    }
+
+    /* All headers */
+    h3 {
+        color: #00d4ff !important;
+        font-size: 1.1rem !important;
+        font-weight: 700 !important;
+        border-bottom: 1px solid #1a1d27;
+        padding-bottom: 6px;
+        margin-top: 20px !important;
+    }
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 4px;
+        background-color: #13131a;
+        padding: 6px;
+        border-radius: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: #1e1e2e;
+        border-radius: 8px;
+        color: #aaaaaa !important;
+        padding: 6px 10px;
+        font-weight: 600;
+        font-size: 0.75rem;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(90deg, #00d4ff, #7b2ff7) !important;
+        color: #ffffff !important;
+    }
+
+    /* Buttons */
+    .stButton > button {
+        background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+        color: white !important;
+        border: none !important;
+        border-radius: 10px;
+        padding: 14px 20px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        width: 100%;
+        margin-top: 8px;
+        min-height: 48px;
+    }
+
+    .stButton > button:hover {
+        opacity: 0.9;
+        transform: scale(1.01);
+    }
+
+    /* Input fields */
+    .stTextInput > div > div > input {
+        background-color: #13131a !important;
+        border: 1.5px solid #2d2d4e !important;
+        border-radius: 10px !important;
+        color: #ffffff !important;
+        font-size: 1rem !important;
+        padding: 12px !important;
+        min-height: 48px;
+    }
+
+    .stTextArea > div > div > textarea {
+        background-color: #13131a !important;
+        border: 1.5px solid #2d2d4e !important;
+        border-radius: 10px !important;
+        color: #ffffff !important;
+        font-size: 0.95rem !important;
+    }
+
+    /* Selectbox */
+    .stSelectbox > div > div {
+        background-color: #13131a !important;
+        border: 1.5px solid #2d2d4e !important;
+        border-radius: 10px !important;
+        color: #ffffff !important;
+        min-height: 48px;
+    }
+
+    /* Slider */
+    .stSlider > div > div > div > div {
+        background: linear-gradient(90deg, #00d4ff, #7b2ff7) !important;
+    }
+
+    /* Metrics */
+    [data-testid="metric-container"] {
+        background-color: #13131a;
+        border: 1px solid #2d2d4e;
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+    }
+
+    [data-testid="metric-container"] label {
+        color: #888888 !important;
+        font-size: 0.7rem !important;
+    }
+
+    [data-testid="metric-container"] [data-testid="stMetricValue"] {
+        color: #00d4ff !important;
+        font-size: 1.8rem !important;
+        font-weight: 800 !important;
+    }
+
+    /* Chat messages */
+    .stChatMessage {
+        background-color: #13131a !important;
+        border: 1px solid #2d2d4e;
+        border-radius: 12px;
+        margin: 6px 0;
+        padding: 4px;
+    }
+
+    /* Alerts */
+    .stSuccess {
+        background-color: #0d2b1a !important;
+        border: 1px solid #00c853 !important;
+        border-radius: 10px !important;
+        color: #00e676 !important;
+    }
+
+    .stError {
+        background-color: #2b0d0d !important;
+        border: 1px solid #ff1744 !important;
+        border-radius: 10px !important;
+    }
+
+    .stWarning {
+        background-color: #2b1f0d !important;
+        border: 1px solid #ff9100 !important;
+        border-radius: 10px !important;
+    }
+
+    .stInfo {
+        background-color: #0d1f2b !important;
+        border: 1px solid #00d4ff !important;
+        border-radius: 10px !important;
+    }
+
+    /* Caption */
+    .stCaption {
+        color: #666688 !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Expander */
+    .streamlit-expander {
+        background-color: #13131a !important;
+        border: 1px solid #2d2d4e !important;
+        border-radius: 10px !important;
+    }
+
+    /* Divider */
+    hr {
+        border-color: #2d2d4e !important;
+        margin: 16px 0 !important;
+    }
+
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Block container padding for mobile */
+    .block-container {
+        padding: 1rem 1rem 2rem 1rem !important;
+        max-width: 100% !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-st.title("NexusAI 🧠")
-st.subheader("Your personal AI study operating system")
+st.markdown("# NexusAI 🧠")
+st.markdown("<p style='color:#666688; font-size:0.85rem; margin-top:-10px;'>Your personal AI study operating system</p>", unsafe_allow_html=True)
 
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 BIN_ID = st.secrets["JSONBIN_BIN_ID"]
