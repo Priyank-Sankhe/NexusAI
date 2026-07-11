@@ -509,17 +509,35 @@ def get_weak_topics(gap_log):
 
 # ================= MISSION ENGINE =================
 
+MISSION_PENDING = "pending"
+MISSION_ACTIVE = "active"
+MISSION_COMPLETED = "completed"
+MISSION_SKIPPED = "skipped"
+
+
 def create_mission(title, reason, priority, duration):
 
     return {
-        "id": datetime.now().strftime("%Y%m%d%H%M%S"),
-        "title": title,
-        "reason": reason,
-        "priority": priority,
-        "duration": duration,
-        "status": "pending",
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }
+    "id": datetime.now().strftime("%Y%m%d%H%M%S"),
+
+    "title": title,
+
+    "reason": reason,
+
+    "priority": priority,
+
+    "duration": duration,
+
+    "status": MISSION_PENDING,
+
+    "progress": 0,
+
+    "started_at": None,
+
+    "completed_at": None,
+
+    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+}
 
 def generate_daily_mission():
 
@@ -722,60 +740,43 @@ def section_header(icon, title, subtitle, accent):
     </div>
     """, unsafe_allow_html=True)
 
-# ================= AI COMMAND CENTER =================
+# ================= CURRENT MISSION =================
 
-st.markdown("## 🧠 Today's Focus")
+st.markdown("## 🎯 Current Mission")
 
-weak_topics = get_weak_topics(st.session_state.db["gap_log"])
+mission = st.session_state.db["current_mission"]
 
-command = st.container(border=True)
+mission_card = st.container(border=True)
 
-with command:
+with mission_card:
 
-    if weak_topics:
+    if mission:
 
-        weakest = sorted(
-            weak_topics,
-            key=lambda x: x["days_since"],
-            reverse=True
-        )[0]
-
-        left, right = st.columns([2, 1])
+        left, right = st.columns([3, 1])
 
         with left:
 
-            st.info(
-                f"""
-### 📌 Recommended Focus
+            st.subheader(mission["title"])
 
-**Revise:** {weakest['topic']}
+            st.caption(mission["reason"])
 
-It has been **{weakest['days_since']} days**
-since you last practiced this topic.
-
-This should be your first revision today.
-"""
-            )
+            st.progress(mission["progress"] / 100)
 
         with right:
 
-            st.warning(
-                f"""
-### ⚠ Weakest Topic
-
-**{weakest['topic']}**
-"""
+            st.metric(
+                "Duration",
+                f"{mission['duration']} min"
             )
 
-        st.success(
-            "💡 AI Recommendation: Revise this topic before attempting new DSA problems."
-        )
+            st.metric(
+                "Status",
+                mission["status"].title()
+            )
 
     else:
 
-        st.success(
-            "🎉 Great work! No overdue weak topics detected."
-        )
+        st.success("🎉 No active mission available.")
 
 st.write("")
 
