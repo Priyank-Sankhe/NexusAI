@@ -464,11 +464,28 @@ MASTER_KEY = st.secrets["JSONBIN_MASTER_KEY"]
 JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
 
 def load_data():
+    default_db = {
+        "gap_log": [],
+        "day_logs": [],
+        "missions": [],
+        "current_mission": None
+    }
+
     try:
-        response = requests.get(JSONBIN_URL, headers={"X-Master-Key": MASTER_KEY})
-        return response.json()["record"]
+        response = requests.get(
+            JSONBIN_URL,
+            headers={"X-Master-Key": MASTER_KEY}
+        )
+
+        data = response.json()["record"]
+
+        for key, value in default_db.items():
+            data.setdefault(key, value)
+
+        return data
+
     except:
-        return {"gap_log": [], "day_logs": []}
+        return default_db
 
 def save_data(data):
     try:
@@ -490,6 +507,42 @@ def get_weak_topics(gap_log):
                 weak.append({"topic": entry["topic"], "days_since": days_since, "score": score})
     return weak
 
+# ================= MISSION ENGINE =================
+
+def create_mission(title, reason, priority, duration):
+
+    return {
+        "id": datetime.now().strftime("%Y%m%d%H%M%S"),
+        "title": title,
+        "reason": reason,
+        "priority": priority,
+        "duration": duration,
+        "status": "pending",
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+
+def generate_daily_mission():
+
+    weak_topics = get_weak_topics(
+        st.session_state.db["gap_log"]
+    )
+
+    if not weak_topics:
+        return None
+
+    weakest = sorted(
+        weak_topics,
+        key=lambda x: x["days_since"],
+        reverse=True
+    )[0]
+
+    return create_mission(
+        title=f"Revise {weakest['topic']}",
+        reason=f"Last revised {weakest['days_since']} days ago",
+        priority=100,
+        duration=25
+    )
+
 if "db" not in st.session_state:
     st.session_state.db = load_data()
 if "messages" not in st.session_state:
@@ -498,6 +551,20 @@ if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
+
+# ================= CURRENT MISSION =================
+
+if st.session_state.db["current_mission"] is None:
+
+    mission = generate_daily_mission()
+
+    if mission:
+
+        st.session_state.db["missions"].append(mission)
+
+        st.session_state.db["current_mission"] = mission
+
+        save_data(st.session_state.db)
 
 # ================= SIDEBAR =================
 
