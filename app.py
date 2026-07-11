@@ -762,40 +762,34 @@ with mission_card:
 
             st.progress(mission["progress"] / 100)
 
-        with right:
+    with right:
 
-    st.metric(
-        "Duration",
-        f"{mission['duration']} min"
-    )
+        st.metric(
+            "Duration",
+            f"{mission['duration']} min"
+        )
 
-    st.metric(
-        "Status",
-        mission["status"].title()
-    )
+        st.metric(
+            "Status",
+            mission["status"].title()
+        )
 
-    if mission["status"] == MISSION_PENDING:
+        if mission["status"] == MISSION_PENDING:
 
-        if st.button(
-            "▶ Start Mission",
-            use_container_width=True
-        ):
+            if st.button(
+                "▶ Start Mission",
+                use_container_width=True
+            ):
 
-            mission["status"] = MISSION_ACTIVE
+                mission["status"] = MISSION_ACTIVE
 
-            mission["started_at"] = datetime.now().strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+                mission["started_at"] = datetime.now().strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
 
-            save_data(st.session_state.db)
+                save_data(st.session_state.db)
 
-            st.rerun()
-
-    else:
-
-        st.success("🎉 No active mission available.")
-
-st.write("")
+                st.rerun()
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
