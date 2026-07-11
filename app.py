@@ -78,7 +78,7 @@ with tab2:
             
             Format exactly like this:
             PROBLEM: [problem statement with example input and output]
-            DIFFICULTY: [Easy/Medium]
+            DIFFICULTY: [Easy/Medium/Hard] , gradually increase difficulty
             HINT: [one line hint, not the solution]"""
 
             response = client.chat.completions.create(
