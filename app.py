@@ -437,6 +437,30 @@ WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cove
         st.markdown(st.session_state.mock_question)
 
         st.caption("Think out loud. Explain approach first, then solution — exactly like a real interview.")
+
+col_timer1, col_timer2, col_timer3 = st.columns(3)
+with col_timer1:
+    if st.button("▶️ Start Timer", key="start_timer"):
+        st.session_state.timer_start = datetime.now()
+        st.session_state.timer_running = True
+with col_timer2:
+    if st.button("⏹️ Stop Timer", key="stop_timer"):
+        if "timer_start" in st.session_state:
+            elapsed = (datetime.now() - st.session_state.timer_start).seconds
+            mins = elapsed // 60
+            secs = elapsed % 60
+            st.session_state.timer_result = f"{mins}m {secs}s"
+            st.session_state.timer_running = False
+with col_timer3:
+    if st.button("🔄 Reset Timer", key="reset_timer"):
+        st.session_state.timer_start = datetime.now()
+        st.session_state.timer_result = None
+
+if "timer_result" in st.session_state and st.session_state.timer_result:
+    elapsed = (datetime.now() - st.session_state.timer_start).seconds if st.session_state.get("timer_running") else None
+    st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
+    if "20" in st.session_state.timer_result or int(st.session_state.timer_result.split("m")[0]) >= 20:
+        st.warning("Over 20 minutes — flag this topic for extra practice.")
         mock_answer = st.text_area("Your answer:", height=250,
                                     placeholder="Explain your thought process first, then your approach, then your solution...",
                                     key="mock_answer")
