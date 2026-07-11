@@ -189,7 +189,7 @@ if "messages" not in st.session_state:
 if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
 
-tab1, tab2, tab3, tab4 = st.tabs(["💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard"])
+tab1, tab2, tab3, tab4, tab5 = st.tabs(["💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"])
 
 # ==================== TAB 1: STUDY CHAT ====================
 with tab1:
@@ -550,3 +550,125 @@ with tab4:
     if st.button("🔄 Refresh Dashboard"):
         st.session_state.db = load_data()
         st.rerun()
+        # ==================== TAB 5: MOCK INTERVIEW ====================
+with tab5:
+    st.header("Mock Interview 🎤")
+    st.caption("Interview-format questions. Evaluated at the hiring bar — not just correct/incorrect.")
+
+    db = st.session_state.db
+    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
+
+    # Pull weak topics for smart topic suggestion
+    weak_topics = list(set([
+        e["topic"] for e in gap_log if e.get("score", 0) <= 1
+    ]))
+
+    topics = [
+        "Prefix Sum",
+        "Sliding Window",
+        "Contribution Technique",
+        "Bit Manipulation",
+        "2D Matrices",
+        "Strings"
+    ]
+
+    if weak_topics:
+        st.warning(f"⚠️ Recommended: Practice your weak topics first — {', '.join(weak_topics)}")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        interview_topic = st.selectbox("Select topic:", topics, key="mock_topic")
+    with col2:
+        difficulty = st.selectbox("Difficulty:", ["Easy", "Medium", "Hard"], key="mock_diff")
+
+    if st.button("Start Interview Question"):
+        with st.spinner("Preparing your interview question..."):
+            question_prompt = f"""You are a technical interviewer at a product company hiring for an 18-22 LPA software engineering role.
+
+Generate ONE interview question on: {interview_topic}
+Difficulty: {difficulty}
+
+Format exactly like this:
+QUESTION: [the problem statement, clear and complete]
+WHAT WE'RE TESTING: [what skill or concept this question actually evaluates]
+TIME LIMIT: [realistic time limit in minutes]
+WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullet points describing what a hired candidate would say — do not give the solution]"""
+
+            q_response = client.chat.completions.create(
+                model="llama-3.1-8b-instant",
+                messages=[
+                    {"role": "system", "content": f"You are a strict technical interviewer evaluating candidates for a {difficulty}-level {interview_topic} question. You hire only strong candidates."},
+                    {"role": "user", "content": question_prompt}
+                ]
+            )
+            st.session_state.mock_question = q_response.choices[0].message.content
+            st.session_state.mock_topic = interview_topic
+            st.session_state.mock_difficulty = difficulty
+
+    if "mock_question" in st.session_state:
+        st.markdown("### Your Question")
+        st.markdown(st.session_state.mock_question)
+
+        st.markdown("### Your Answer")
+        st.caption("Think out loud. Write your approach, reasoning, and solution — the way you would explain it to an interviewer.")
+        
+        mock_answer = st.text_area(
+            "Your answer:",
+            height=250,
+            placeholder="Explain your thought process first, then your approach, then your solution...",
+            key="mock_answer"
+        )
+
+        if st.button("Evaluate My Answer"):
+            if len(mock_answer.strip()) < 20:
+                st.warning("Write a real answer before evaluating — at least explain your approach.")
+            else:
+                with st.spinner("Evaluating at the hiring bar..."):
+                    eval_prompt = f"""You are a senior engineer interviewing a candidate for an 18-22 LPA software engineering role.
+
+Question asked: {st.session_state.mock_question}
+Candidate's answer: {mock_answer}
+Topic: {st.session_state.mock_topic}
+Difficulty: {st.session_state.mock_difficulty}
+
+Evaluate this answer at the actual hiring bar. Be strict and honest.
+
+1. COMMUNICATION: Did they explain their thinking clearly before jumping to code?
+2. APPROACH: Was the problem-solving approach correct and logical?
+3. SOLUTION QUALITY: Is the solution correct, optimal, or flawed?
+4. WHAT IMPRESSED: Specific things that worked well
+5. WHAT WOULD REJECT: Specific things that would cause a no-hire decision
+6. HIRING VERDICT: "Strong Hire", "Hire", "No Hire" — with one sentence explanation
+7. WHAT TO SAY INSTEAD: For the weakest part of their answer, show exactly what a hired candidate would say"""
+
+                    eval_response = client.chat.completions.create(
+                        model="llama-3.1-8b-instant",
+                        messages=[
+                            {"role": "system", "content": "You are a strict senior engineer interviewer. You evaluate at the actual hiring bar for product companies. No sugarcoating. A weak answer gets a No Hire regardless of effort."},
+                            {"role": "user", "content": eval_prompt}
+                        ]
+                    )
+                    evaluation = eval_response.choices[0].message.content
+                    st.markdown("### Interviewer Evaluation")
+                    st.markdown(evaluation)
+
+                    # Extract verdict and log to persistent storage
+                    verdict = "No Hire"
+                    if "Strong Hire" in evaluation:
+                        verdict = "Strong Hire"
+                        st.success("✅ Strong Hire — Strong performance.")
+                    elif "No Hire" in evaluation:
+                        st.error("❌ No Hire — Review this topic before your next interview.")
+                    else:
+                        verdict = "Hire"
+                        st.warning("🟡 Hire — Acceptable but room for improvement.")
+
+                    # Log to shared data layer
+                    st.session_state.db["gap_log"].append({
+                        "type": "mock_entry",
+                        "topic": st.session_state.mock_topic,
+                        "difficulty": st.session_state.mock_difficulty,
+                        "date": datetime.now().strftime("%Y-%m-%d"),
+                        "verdict": verdict
+                    })
+                    save_data(st.session_state.db)
