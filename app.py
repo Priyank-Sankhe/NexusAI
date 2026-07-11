@@ -775,33 +775,35 @@ with mission_card:
 
     with right:
 
-        st.metric(
-            "Duration",
-            f"{mission['duration']} min"
-        )
+            st.metric(
+                "Duration",
+                f"{mission['duration']} min"
+            )
 
-        st.metric(
-            "Status",
-            mission["status"].title()
-        )
+            st.metric(
+                "Status",
+                mission["status"].title()
+            )
 
-        if mission["status"] == MISSION_PENDING:
+            if mission["status"] == MISSION_PENDING:
 
-            if st.button(
-                "▶ Start Mission",
-                use_container_width=True
-            ):
+                if st.button(
+                    "▶ Start Mission",
+                    use_container_width=True
+                ):
 
-                mission["status"] = MISSION_ACTIVE
+                    mission["status"] = MISSION_ACTIVE
 
-                mission["started_at"] = datetime.now().strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
+                    mission["started_at"] = datetime.now().strftime(
+                        "%Y-%m-%d %H:%M:%S"
+                    )
 
-                save_data(st.session_state.db)
+                    save_data(st.session_state.db)
 
-                st.rerun()
+                    st.rerun()
 
+    else:
+        st.info("No active mission yet. Solve problems in GapFinder to generate one.")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
 ])
