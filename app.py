@@ -1,19 +1,17 @@
 import streamlit as st
-import google.generativeai as genai
+from groq import Groq
 
 st.set_page_config(page_title="NexusAI", layout="wide")
 st.title("NexusAI 🧠")
 st.subheader("Your personal AI study operating system")
 
-GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-flash-latest")
+client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 
 tab1, tab2, tab3 = st.tabs(["💬 Study Chat", "🎯 GapFinder", "⚡ FlowState"])
 
 with tab1:
     st.header("Study Chat")
-    st.caption("Ask anything about your curriculum. Powered by Gemini — no token limits.")
+    st.caption("Ask anything about your curriculum. No token limits.")
     
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -30,21 +28,26 @@ with tab1:
             st.write(user_input)
         
         system_context = """You are NexusAI, a personal study assistant for a software 
-        engineering student at Scaler Academy. The student is currently in Module 5 
-        (AI & Agents), has completed Modules 1-4 covering Java basics and intermediate DSA 
-        (arrays, prefix sum, contribution technique, sliding window, bit manipulation, 
-        2D matrices, strings). Target: 18 LPA software development role. 
-        Teaching style: first principles, no hand-holding, direct and honest."""
-        
-        full_prompt = f"{system_context}\n\nStudent question: {user_input}"
+        engineering student at Scaler Academy. Currently in Module 5 (AI & Agents). 
+        Completed: Java basics, intermediate DSA (arrays, prefix sum, contribution 
+        technique, sliding window, bit manipulation, 2D matrices, strings). 
+        Target: 18 LPA software development role. 
+        Teaching style: first principles, direct, honest, no hand-holding."""
         
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
-                response = model.generate_content(full_prompt)
-                st.write(response.text)
+                response = client.chat.completions.create(
+                    model="llama3-8b-8192",
+                    messages=[
+                        {"role": "system", "content": system_context},
+                        *st.session_state.messages
+                    ]
+                )
+                reply = response.choices[0].message.content
+                st.write(reply)
                 st.session_state.messages.append({
-                    "role": "assistant", 
-                    "content": response.text
+                    "role": "assistant",
+                    "content": reply
                 })
 
 with tab2:
