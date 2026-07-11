@@ -445,6 +445,15 @@ section[data-testid="stSidebar"] .stButton>button:hover{
 
     background:#7D5436;
 }
+.stAlert{
+
+    border-radius:16px;
+
+    border:none;
+
+    box-shadow:0 8px 20px rgba(0,0,0,.18);
+
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -645,6 +654,63 @@ def section_header(icon, title, subtitle, accent):
         </p>
     </div>
     """, unsafe_allow_html=True)
+
+# ================= AI COMMAND CENTER =================
+
+st.markdown("## 🧠 Today's Focus")
+
+weak_topics = get_weak_topics(st.session_state.db["gap_log"])
+
+command = st.container(border=True)
+
+with command:
+
+    if weak_topics:
+
+        weakest = sorted(
+            weak_topics,
+            key=lambda x: x["days_since"],
+            reverse=True
+        )[0]
+
+        left, right = st.columns([2, 1])
+
+        with left:
+
+            st.info(
+                f"""
+### 📌 Recommended Focus
+
+**Revise:** {weakest['topic']}
+
+It has been **{weakest['days_since']} days**
+since you last practiced this topic.
+
+This should be your first revision today.
+"""
+            )
+
+        with right:
+
+            st.warning(
+                f"""
+### ⚠ Weakest Topic
+
+**{weakest['topic']}**
+"""
+            )
+
+        st.success(
+            "💡 AI Recommendation: Revise this topic before attempting new DSA problems."
+        )
+
+    else:
+
+        st.success(
+            "🎉 Great work! No overdue weak topics detected."
+        )
+
+st.write("")
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
