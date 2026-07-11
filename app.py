@@ -795,7 +795,7 @@ with mission_card:
                        "%Y-%m-%d %H:%M:%S"
                     )
 
-                  st.session_state.db["current_mission"] = None
+                   st.session_state.db["current_mission"] = None
 
                     save_data(st.session_state.db)
 
