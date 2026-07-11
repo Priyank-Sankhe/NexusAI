@@ -189,7 +189,7 @@ if "messages" not in st.session_state:
 if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
 
-tab1, tab2, tab3 = st.tabs(["💬 Study Chat", "🎯 GapFinder", "⚡ FlowState"])
+tab1, tab2, tab3, tab4 = st.tabs(["💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard"])
 
 # ==================== TAB 1: STUDY CHAT ====================
 with tab1:
@@ -463,3 +463,90 @@ Give:
                     })
                     save_data(st.session_state.db)
                     st.success("✅ Day logged. See you tomorrow.")
+                    # ==================== TAB 4: DASHBOARD ====================
+with tab4:
+    st.header("Dashboard 📊")
+    st.caption("Your progress at a glance.")
+
+    db = st.session_state.db
+    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
+    day_logs = db["day_logs"]
+
+    # ---------- STATS ROW ----------
+    col1, col2, col3, col4 = st.columns(4)
+
+    total_attempted = len(gap_log)
+    total_solid = len([e for e in gap_log if e.get("score", 0) == 2])
+    total_weak = len([e for e in gap_log if e.get("score", 0) <= 1])
+    days_logged = len(day_logs)
+
+    with col1:
+        st.metric("Problems Attempted", total_attempted)
+    with col2:
+        st.metric("Marked Solid ✅", total_solid)
+    with col3:
+        st.metric("Flagged Weak ⚠️", total_weak)
+    with col4:
+        st.metric("Days Logged", days_logged)
+
+    st.markdown("---")
+
+    # ---------- WEAK TOPICS TABLE ----------
+    st.markdown("### ⚠️ Weak Topics")
+    weak_entries = [e for e in gap_log if e.get("score", 0) <= 1]
+
+    if weak_entries:
+        topic_data = {}
+        for e in weak_entries:
+            topic = e["topic"]
+            if topic not in topic_data:
+                topic_data[topic] = {"attempts": 0, "last_attempt": e["date"]}
+            topic_data[topic]["attempts"] += 1
+            if e["date"] > topic_data[topic]["last_attempt"]:
+                topic_data[topic]["last_attempt"] = e["date"]
+
+        for topic, data in topic_data.items():
+            days_since = (datetime.now().date() - datetime.strptime(
+                data["last_attempt"], "%Y-%m-%d").date()).days
+            retest_due = "🔴 Due now" if days_since >= 7 else f"🟡 In {7 - days_since} days"
+            st.markdown(f"**{topic}** — {data['attempts']} weak attempt(s) — Last: {data['last_attempt']} — Retest: {retest_due}")
+    else:
+        st.success("No weak topics yet. Keep solving.")
+
+    st.markdown("---")
+
+    # ---------- TOPIC PERFORMANCE ----------
+    st.markdown("### 📈 Topic Performance")
+    if gap_log:
+        topic_scores = {}
+        for e in gap_log:
+            topic = e["topic"]
+            if topic not in topic_scores:
+                topic_scores[topic] = []
+            topic_scores[topic].append(e.get("score", 0))
+
+        for topic, scores in topic_scores.items():
+            avg = sum(scores) / len(scores)
+            bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
+            st.markdown(f"{bar} **{topic}** — {len(scores)} attempt(s) — Avg score: {avg:.1f}/2")
+    else:
+        st.info("No attempts logged yet. Start with GapFinder.")
+
+    st.markdown("---")
+
+    # ---------- DAY LOGS ----------
+    st.markdown("### 🌙 Recent Day Logs")
+    if day_logs:
+        for log in reversed(day_logs[-5:]):
+            with st.expander(f"📅 {log['date']}"):
+                st.markdown(f"**Completed:** {log['completed']}")
+                st.markdown(f"**Review:** {log['review']}")
+    else:
+        st.info("No days logged yet. Use FlowState tonight.")
+
+    st.markdown("---")
+
+    # ---------- REFRESH BUTTON ----------
+    if st.button("🔄 Refresh Dashboard"):
+        st.session_state.db = load_data()
+        st.rerun()
