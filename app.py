@@ -559,7 +559,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 
 # ==================== TAB 1 ====================
 with tab1:
-section_header(
+    section_header(
     "💬",
     "Study Chat",
     "Ask anything about your Scaler journey. NexusAI remembers your learning context.",
