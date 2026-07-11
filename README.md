@@ -23,6 +23,7 @@ and days that went off track with no recovery system. I built NexusAI to fix all
 
 ## Version Roadmap
 - V1 (current): Study Chat + GapFinder + FlowState
-- V2: Persistent weak topic tracking with spaced repetition
+- V2:  Persistent weak topic tracking with 
+  7-day spaced repetition, cross-tab data sharing via JSONBin
 - V3: Daily completion logging with pattern analysis
 - V4: Mock interview mode
