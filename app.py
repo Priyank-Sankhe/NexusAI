@@ -764,15 +764,32 @@ with mission_card:
 
         with right:
 
-            st.metric(
-                "Duration",
-                f"{mission['duration']} min"
+    st.metric(
+        "Duration",
+        f"{mission['duration']} min"
+    )
+
+    st.metric(
+        "Status",
+        mission["status"].title()
+    )
+
+    if mission["status"] == MISSION_PENDING:
+
+        if st.button(
+            "▶ Start Mission",
+            use_container_width=True
+        ):
+
+            mission["status"] = MISSION_ACTIVE
+
+            mission["started_at"] = datetime.now().strftime(
+                "%Y-%m-%d %H:%M:%S"
             )
 
-            st.metric(
-                "Status",
-                mission["status"].title()
-            )
+            save_data(st.session_state.db)
+
+            st.rerun()
 
     else:
 
