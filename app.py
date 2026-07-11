@@ -452,16 +452,178 @@ if "flow_plan" not in st.session_state:
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
 
-st.markdown("## 🧠 NexusAI")
-st.markdown("---")
-col_a, col_b, col_c = st.columns(3)
-with col_a:
-    st.metric("Problems", len([e for e in st.session_state.db["gap_log"] if e.get("type") == "gap_entry"]))
-with col_b:
-    st.metric("Weak Topics", len(set([e["topic"] for e in st.session_state.db["gap_log"] if e.get("type") == "gap_entry" and e.get("score", 0) <= 1])))
-with col_c:
-    st.metric("Days Logged", len(st.session_state.db["day_logs"]))
-st.markdown("---")
+# ================= HERO SECTION =================
+
+gap_log = st.session_state.db["gap_log"]
+day_logs = st.session_state.db["day_logs"]
+
+problem_count = len(
+    [e for e in gap_log if e.get("type") == "gap_entry"]
+)
+
+weak_count = len(set(
+    e["topic"]
+    for e in gap_log
+    if e.get("type") == "gap_entry"
+    and e.get("score",0) <= 1
+))
+
+day_count = len(day_logs)
+
+st.markdown("""
+<div style="
+
+background:linear-gradient(135deg,
+rgba(73,50,36,.95),
+rgba(42,30,22,.90));
+
+padding:35px;
+
+border-radius:22px;
+
+border:1px solid rgba(255,255,255,.08);
+
+box-shadow:
+0 15px 45px rgba(0,0,0,.35);
+
+margin-bottom:25px;
+
+">
+
+<h1 style="
+margin:0;
+font-size:42px;
+color:#FFF4E7;
+font-weight:800;
+">
+
+🧠 NexusAI
+
+</h1>
+
+<p style="
+margin-top:10px;
+font-size:18px;
+color:#D8C7B7;
+">
+
+Your AI Software Engineering Coach
+
+</p>
+
+<p style="
+color:#A98C74;
+font-size:14px;
+margin-top:18px;
+">
+
+Built for focused learning • Gap Detection • Interview Practice • FlowState
+
+</p>
+
+</div>
+
+""", unsafe_allow_html=True)
+
+col1,col2,col3=st.columns(3)
+
+with col1:
+
+    st.markdown(f"""
+    <div style="
+    background:linear-gradient(135deg,#3A281E,#2A1E17);
+    border-radius:18px;
+    padding:25px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,.06);
+    ">
+
+    <div style="font-size:40px;">📚</div>
+
+    <div style="
+    color:#D9C7B7;
+    font-size:16px;
+    margin-top:10px;
+    ">
+    Problems Solved
+    </div>
+
+    <div style="
+    color:white;
+    font-size:34px;
+    font-weight:800;
+    ">
+    {problem_count}
+    </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+
+    st.markdown(f"""
+    <div style="
+    background:linear-gradient(135deg,#4A301F,#2E2017);
+    border-radius:18px;
+    padding:25px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,.06);
+    ">
+
+    <div style="font-size:40px;">🎯</div>
+
+    <div style="
+    color:#D9C7B7;
+    font-size:16px;
+    margin-top:10px;
+    ">
+    Weak Topics
+    </div>
+
+    <div style="
+    color:#FFCB77;
+    font-size:34px;
+    font-weight:800;
+    ">
+    {weak_count}
+    </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+with col3:
+
+    st.markdown(f"""
+    <div style="
+    background:linear-gradient(135deg,#2F241B,#241A14);
+    border-radius:18px;
+    padding:25px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,.06);
+    ">
+
+    <div style="font-size:40px;">📅</div>
+
+    <div style="
+    color:#D9C7B7;
+    font-size:16px;
+    margin-top:10px;
+    ">
+    Study Days
+    </div>
+
+    <div style="
+    color:#98E08B;
+    font-size:34px;
+    font-weight:800;
+    ">
+    {day_count}
+    </div>
+
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<br>", unsafe_allow_html=True)
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
