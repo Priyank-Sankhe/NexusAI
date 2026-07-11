@@ -15,16 +15,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.markdown("## 🧠 NexusAI")
-st.markdown("---")
-col_a, col_b, col_c = st.columns(3)
-with col_a:
-    st.metric("Problems", len([e for e in st.session_state.db["gap_log"] if e.get("type") == "gap_entry"]))
-with col_b:
-    st.metric("Weak Topics", len(set([e["topic"] for e in st.session_state.db["gap_log"] if e.get("type") == "gap_entry" and e.get("score", 0) <= 1])))
-with col_c:
-    st.metric("Days Logged", len(st.session_state.db["day_logs"]))
-st.markdown("---")
+
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 BIN_ID = st.secrets["JSONBIN_BIN_ID"]
 MASTER_KEY = st.secrets["JSONBIN_MASTER_KEY"]
@@ -65,6 +56,17 @@ if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
+
+st.markdown("## 🧠 NexusAI")
+st.markdown("---")
+col_a, col_b, col_c = st.columns(3)
+with col_a:
+    st.metric("Problems", len([e for e in st.session_state.db["gap_log"] if e.get("type") == "gap_entry"]))
+with col_b:
+    st.metric("Weak Topics", len(set([e["topic"] for e in st.session_state.db["gap_log"] if e.get("type") == "gap_entry" and e.get("score", 0) <= 1])))
+with col_c:
+    st.metric("Days Logged", len(st.session_state.db["day_logs"]))
+st.markdown("---")
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
