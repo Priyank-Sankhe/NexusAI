@@ -406,7 +406,45 @@ hr{
 
     background:#AE7546;
 }
+/* ==========================================
+   SIDEBAR
+========================================== */
 
+section[data-testid="stSidebar"]{
+
+    background:
+        linear-gradient(
+            180deg,
+            #20150F,
+            #2D1E16
+        );
+
+    border-right:1px solid rgba(255,255,255,.08);
+}
+
+section[data-testid="stSidebar"] .block-container{
+
+    padding-top:1.8rem;
+}
+
+section[data-testid="stSidebar"] h2{
+
+    color:#FFF3E6;
+}
+
+section[data-testid="stSidebar"] .stButton>button{
+
+    background:#3B291E;
+
+    border-radius:12px;
+
+    margin-bottom:8px;
+}
+
+section[data-testid="stSidebar"] .stButton>button:hover{
+
+    background:#7D5436;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -451,6 +489,61 @@ if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
+
+# ================= SIDEBAR =================
+
+with st.sidebar:
+
+    st.markdown("## 🧠 NexusAI")
+
+    st.caption("AI Software Engineering Coach")
+
+    st.divider()
+
+    gap_log = st.session_state.db["gap_log"]
+    day_logs = st.session_state.db["day_logs"]
+
+    problems = len([
+        e for e in gap_log
+        if e.get("type") == "gap_entry"
+    ])
+
+    weak = len({
+        e["topic"]
+        for e in gap_log
+        if e.get("type") == "gap_entry"
+        and e.get("score",0) <= 1
+    })
+
+    st.metric("📚 Problems", problems)
+
+    st.metric("🎯 Weak Topics", weak)
+
+    st.metric("📅 Study Days", len(day_logs))
+
+    st.divider()
+
+    st.markdown("### 🚀 Today's Goal")
+
+    st.progress(0.60)
+
+    st.caption("Complete today's Scaler session")
+
+    st.divider()
+
+    st.markdown("### ⚡ Quick Actions")
+
+    st.button("💬 Study Chat", use_container_width=True)
+
+    st.button("🎯 GapFinder", use_container_width=True)
+
+    st.button("🎤 Mock Interview", use_container_width=True)
+
+    st.button("📊 Dashboard", use_container_width=True)
+
+    st.divider()
+
+    st.caption("NexusAI v1.0")
 
 # ================= HERO =================
 
