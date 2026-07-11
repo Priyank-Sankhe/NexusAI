@@ -110,6 +110,7 @@ with tab2:
 Student's solution attempt: {user_solution}
 
 IMPORTANT: If the solution attempt is empty, less than 10 characters, 
+is more than 10 characters but completely irrelevant and meaningless 
 or is a question rather than a solution attempt, respond only with:
 "Please write an actual solution attempt before requesting evaluation."
 Do not evaluate, do not generate a solution.
