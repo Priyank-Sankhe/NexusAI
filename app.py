@@ -789,7 +789,7 @@ with mission_card:
 
                    mission["status"] = MISSION_COMPLETED
 
-                    mission["progress"] = 100
+                   mission["progress"] = 100
 
                    mission["completed_at"] = datetime.now().strftime(
                        "%Y-%m-%d %H:%M:%S"
