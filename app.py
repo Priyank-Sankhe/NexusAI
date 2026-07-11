@@ -779,6 +779,27 @@ with mission_card:
                     mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     save_data(st.session_state.db)
                     st.rerun()
+                   if mission["status"] == MISSION_ACTIVE:
+
+    if st.button(
+        "✅ Complete Mission",
+        key="complete_mission_btn",
+        use_container_width=True
+    ):
+
+        mission["status"] = MISSION_COMPLETED
+
+        mission["progress"] = 100
+
+        mission["completed_at"] = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        st.session_state.db["current_mission"] = None
+
+        save_data(st.session_state.db)
+
+        st.rerun()
     else:
         st.info("No active mission yet. Solve problems in GapFinder to generate one.")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
