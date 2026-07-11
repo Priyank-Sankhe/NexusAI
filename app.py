@@ -460,9 +460,12 @@ with col_timer3:
 if st.session_state.get("timer_result"):
     st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
 
-        mock_answer = st.text_area("Your answer:", height=250,
-                                    placeholder="Explain your thought process first, then your approach, then your solution...",
-                                    key="mock_answer")
+       mock_answer = st.text_area(
+    "Your answer:",
+    height=250,
+    placeholder="Explain your thought process first, then your approach, then your solution...",
+    key="mock_answer"
+)
 
         if st.button("Evaluate My Answer", key="eval_mock"):
             if len(mock_answer.strip()) < 20:
