@@ -78,7 +78,9 @@ with tab2:
             
             Format exactly like this:
             PROBLEM: [problem statement with example input and output]
-            DIFFICULTY: [Easy/Medium/Hard] , gradually increase difficulty
+            DIFFICULTY: [Easy/Medium/Hard] , gradually increase difficulty, 
+            start with easy - then - medium then - hard ,
+            if prior topic has 5 cold solved problems by student, move to next difficulty level.
             HINT: [one line hint, not the solution]"""
 
             response = client.chat.completions.create(
