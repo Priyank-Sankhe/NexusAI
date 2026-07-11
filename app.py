@@ -37,12 +37,12 @@ with tab1:
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 response = client.chat.completions.create(
-                    model="llama3-8b-8192",
-                    messages=[
-                        {"role": "system", "content": system_context},
-                        *st.session_state.messages
-                    ]
-                )
+                model="llama3-8b-8192",
+                messages=[
+        {"role": "system", "content": system_context},
+        {"role": "user", "content": user_input}
+    ]
+)
                 reply = response.choices[0].message.content
                 st.write(reply)
                 st.session_state.messages.append({
