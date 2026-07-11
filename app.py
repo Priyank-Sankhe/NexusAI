@@ -5,6 +5,131 @@ import requests
 import json
 
 st.set_page_config(page_title="NexusAI", layout="wide")
+st.markdown("""
+<style>
+    /* Main background */
+    .stApp {
+        background-color: #0e1117;
+        color: #ffffff;
+    }
+    
+    /* Title styling */
+    h1 {
+        background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 3rem !important;
+        font-weight: 800 !important;
+    }
+    
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #1a1d27;
+        padding: 8px;
+        border-radius: 12px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background-color: #252836;
+        border-radius: 8px;
+        color: #ffffff;
+        padding: 8px 20px;
+        font-weight: 600;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(90deg, #00d4ff, #7b2ff7) !important;
+        color: #ffffff !important;
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 10px 24px;
+        font-weight: 600;
+        width: 100%;
+        transition: opacity 0.2s;
+    }
+    
+    .stButton > button:hover {
+        opacity: 0.85;
+    }
+    
+    /* Input fields */
+    .stTextInput > div > div > input,
+    .stTextArea > div > div > textarea {
+        background-color: #1a1d27;
+        border: 1px solid #2d3148;
+        border-radius: 8px;
+        color: #ffffff;
+    }
+    
+    /* Selectbox */
+    .stSelectbox > div > div {
+        background-color: #1a1d27;
+        border: 1px solid #2d3148;
+        border-radius: 8px;
+        color: #ffffff;
+    }
+    
+    /* Cards for sections */
+    .css-1d391kg, .block-container {
+        padding: 2rem 3rem;
+    }
+    
+    /* Chat messages */
+    .stChatMessage {
+        background-color: #1a1d27;
+        border-radius: 12px;
+        border: 1px solid #2d3148;
+        margin: 4px 0;
+    }
+    
+    /* Warning/Success/Error boxes */
+    .stWarning {
+        background-color: #2d2a1a;
+        border: 1px solid #f0a500;
+        border-radius: 8px;
+    }
+    
+    .stSuccess {
+        background-color: #1a2d1a;
+        border: 1px solid #00c853;
+        border-radius: 8px;
+    }
+    
+    .stError {
+        background-color: #2d1a1a;
+        border: 1px solid #ff4444;
+        border-radius: 8px;
+    }
+
+    /* Slider */
+    .stSlider > div > div > div {
+        background: linear-gradient(90deg, #00d4ff, #7b2ff7);
+    }
+
+    /* Subheader */
+    h2, h3 {
+        color: #00d4ff;
+        font-weight: 700;
+    }
+
+    /* Caption */
+    .stCaption {
+        color: #8892b0;
+    }
+
+    /* Spinner */
+    .stSpinner > div {
+        border-top-color: #00d4ff;
+    }
+</style>
+""", unsafe_allow_html=True)
 st.title("NexusAI 🧠")
 st.subheader("Your personal AI study operating system")
 
