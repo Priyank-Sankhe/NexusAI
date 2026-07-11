@@ -452,15 +452,15 @@ with col_timer2:
             st.session_state.timer_result = f"{mins}m {secs}s"
             st.session_state.timer_running = False
 with col_timer3:
-    if st.button("🔄 Reset Timer", key="reset_timer"):
-        st.session_state.timer_start = datetime.now()
-        st.session_state.timer_result = None
+    if st.button("🔄 Reset", key="reset_timer"):
+        st.session_state.pop("timer_start", None)
+        st.session_state.pop("timer_result", None)
+        st.session_state.timer_running = False
 
-if "timer_result" in st.session_state and st.session_state.timer_result:
-    elapsed = (datetime.now() - st.session_state.timer_start).seconds if st.session_state.get("timer_running") else None
+if st.session_state.get("timer_result"):
     st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
-    if "20" in st.session_state.timer_result or int(st.session_state.timer_result.split("m")[0]) >= 20:
-        st.warning("Over 20 minutes — flag this topic for extra practice.")
+
+mock_answer = st.text_area("Your answer:", height=250,
         mock_answer = st.text_area("Your answer:", height=250,
                                     placeholder="Explain your thought process first, then your approach, then your solution...",
                                     key="mock_answer")
