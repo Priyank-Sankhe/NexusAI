@@ -769,6 +769,8 @@ with mission_card:
             st.subheader(mission["title"])
             st.caption(mission["reason"])
             st.progress(mission["progress"] / 100)
+
+            st.caption(f"Progress: {mission['progress']}%")
         with right:
             st.metric("Duration", f"{mission['duration']} min")
             st.metric("Status", mission["status"].title())
