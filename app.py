@@ -797,9 +797,9 @@ with mission_card:
 
                    st.session_state.db["current_mission"] = None
 
-                    save_data(st.session_state.db)
+                   save_data(st.session_state.db)
 
-                    st.rerun()
+                   st.rerun()
     else:
         st.info("No active mission yet. Solve problems in GapFinder to generate one.")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
