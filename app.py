@@ -46,7 +46,7 @@ def get_weak_topics(gap_log):
             score = entry.get("score", 2)
             entry_date = datetime.strptime(entry["date"], "%Y-%m-%d").date()
             days_since = (today - entry_date).days
-            if score <= 1 and days_since >= 7:
+            if score <= 1 and days_since >= 0: 
                 weak.append({
                     "topic": entry["topic"],
                     "days_since": days_since,
