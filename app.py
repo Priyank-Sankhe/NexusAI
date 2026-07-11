@@ -106,10 +106,15 @@ with tab2:
             if user_solution.strip():
                 with st.spinner("Evaluating..."):
                     eval_prompt = f"""Problem: {st.session_state.current_problem}
-                    
-Student's solution: {user_solution}
 
-Evaluate strictly and honestly:
+Student's solution attempt: {user_solution}
+
+IMPORTANT: If the solution attempt is empty, less than 10 characters, 
+or is a question rather than a solution attempt, respond only with:
+"Please write an actual solution attempt before requesting evaluation."
+Do not evaluate, do not generate a solution.
+
+If it is a genuine attempt, evaluate strictly:
 1. CORRECT: What did they get right?
 2. MISSING: What's wrong or missing?
 3. OPTIMAL SOLUTION: Show the correct approach with explanation
