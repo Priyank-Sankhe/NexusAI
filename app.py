@@ -752,56 +752,26 @@ def section_header(icon, title, subtitle, accent):
     """, unsafe_allow_html=True)
 
 # ================= CURRENT MISSION =================
-
 st.markdown("## 🎯 Current Mission")
-
 mission = st.session_state.db["current_mission"]
-
 mission_card = st.container(border=True)
 
 with mission_card:
-
     if mission:
-
         left, right = st.columns([3, 1])
-
         with left:
-
             st.subheader(mission["title"])
-
             st.caption(mission["reason"])
-
             st.progress(mission["progress"] / 100)
-
-    with right:
-
-            st.metric(
-                "Duration",
-                f"{mission['duration']} min"
-            )
-
-            st.metric(
-                "Status",
-                mission["status"].title()
-            )
-
+        with right:
+            st.metric("Duration", f"{mission['duration']} min")
+            st.metric("Status", mission["status"].title())
             if mission["status"] == MISSION_PENDING:
-
-                if st.button(
-                    "▶ Start Mission",
-                    use_container_width=True
-                ):
-
+                if st.button("▶ Start Mission", use_container_width=True):
                     mission["status"] = MISSION_ACTIVE
-
-                    mission["started_at"] = datetime.now().strftime(
-                        "%Y-%m-%d %H:%M:%S"
-                    )
-
+                    mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     save_data(st.session_state.db)
-
                     st.rerun()
-
     else:
         st.info("No active mission yet. Solve problems in GapFinder to generate one.")
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
