@@ -572,6 +572,17 @@ if "timer_running" not in st.session_state:
 
 # ================= CURRENT MISSION =================
 
+mission = st.session_state.db.get("current_mission")
+
+if mission:
+
+    mission.setdefault("progress", 0)
+    mission.setdefault("duration", 25)
+    mission.setdefault("status", MISSION_PENDING)
+    mission.setdefault("reason", "")
+    mission.setdefault("started_at", None)
+    mission.setdefault("completed_at", None)
+
 if st.session_state.db["current_mission"] is None:
 
     mission = generate_daily_mission()
