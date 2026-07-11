@@ -40,7 +40,6 @@ BIN_ID = st.secrets["JSONBIN_BIN_ID"]
 MASTER_KEY = st.secrets["JSONBIN_MASTER_KEY"]
 JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
 
-# ---------- STORAGE FUNCTIONS ----------
 def load_data():
     try:
         response = requests.get(JSONBIN_URL, headers={"X-Master-Key": MASTER_KEY})
@@ -56,7 +55,6 @@ def save_data(data):
     except:
         st.error("Failed to save data.")
 
-# ---------- SPACED REPETITION ----------
 def get_weak_topics(gap_log):
     weak = []
     today = datetime.now().date()
@@ -69,19 +67,20 @@ def get_weak_topics(gap_log):
                 weak.append({"topic": entry["topic"], "days_since": days_since, "score": score})
     return weak
 
-# ---------- SESSION STATE ----------
 if "db" not in st.session_state:
     st.session_state.db = load_data()
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
+if "timer_running" not in st.session_state:
+    st.session_state.timer_running = False
 
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
 ])
 
-# ==================== TAB 1: STUDY CHAT ====================
+# ==================== TAB 1 ====================
 with tab1:
     st.header("Study Chat")
     st.caption("Ask anything about your curriculum. No token limits.")
@@ -117,7 +116,7 @@ with tab1:
                 st.write(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
 
-# ==================== TAB 2: GAPFINDER ====================
+# ==================== TAB 2 ====================
 with tab2:
     st.header("GapFinder 🎯")
     st.caption("Get a problem, solve it, get evaluated. Weakness tracked automatically.")
@@ -153,8 +152,11 @@ HINT: [one line hint, not the solution]"""
         st.markdown("### Problem")
         st.markdown(st.session_state.current_problem)
 
-        user_solution = st.text_area("Write your approach — pseudocode, logic, or actual code:",
-                                      height=200, key="solution_input")
+        user_solution = st.text_area(
+            "Write your approach — pseudocode, logic, or actual code:",
+            height=200,
+            key="solution_input"
+        )
 
         if st.button("Evaluate My Solution", key="eval_solution"):
             if len(user_solution.strip()) < 10:
@@ -206,7 +208,7 @@ Be strict. Do not give 2 unless genuinely correct."""
                     else:
                         st.success(f"✅ {st.session_state.current_topic} marked solid.")
 
-# ==================== TAB 3: FLOWSTATE ====================
+# ==================== TAB 3 ====================
 with tab3:
     st.header("FlowState ⚡")
     st.caption("3PM–11PM | Check-in at 7PM | End of day at 11PM")
@@ -254,9 +256,12 @@ End with: MOST CRITICAL TASK TODAY: [one task]"""
 
         st.markdown("---")
         st.markdown("### ⏰ 7PM Check-in")
-        checkin_report = st.text_area("What actually happened since 3PM?",
-                                       placeholder="e.g. Completed priority 1, got distracted for 1 hour",
-                                       height=100, key="checkin")
+        checkin_report = st.text_area(
+            "What actually happened since 3PM?",
+            placeholder="e.g. Completed priority 1, got distracted for 1 hour",
+            height=100,
+            key="checkin"
+        )
 
         if st.button("Replan 7PM-11PM", key="replan"):
             if len(checkin_report.strip()) < 10:
@@ -281,9 +286,12 @@ Protect the most critical task above everything else."""
 
         st.markdown("---")
         st.markdown("### 🌙 11PM End of Day")
-        eod_report = st.text_area("What did you complete today?",
-                                   placeholder="e.g. Priority 1 done, Priority 2 half done",
-                                   height=100, key="eod")
+        eod_report = st.text_area(
+            "What did you complete today?",
+            placeholder="e.g. Priority 1 done, Priority 2 half done",
+            height=100,
+            key="eod"
+        )
 
         if st.button("Log Day", key="log_day"):
             if len(eod_report.strip()) < 10:
@@ -315,7 +323,7 @@ Give:
                     save_data(st.session_state.db)
                     st.success("✅ Day logged. See you tomorrow.")
 
-# ==================== TAB 4: DASHBOARD ====================
+# ==================== TAB 4 ====================
 with tab4:
     st.header("Dashboard 📊")
     st.caption("Your progress at a glance.")
@@ -387,7 +395,7 @@ with tab4:
         st.session_state.db = load_data()
         st.rerun()
 
-# ==================== TAB 5: MOCK INTERVIEW ====================
+# ==================== TAB 5 ====================
 with tab5:
     st.header("Mock Interview 🎤")
     st.caption("Interview-format questions. Evaluated at the hiring bar.")
@@ -436,36 +444,42 @@ WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cove
         st.markdown("### Your Question")
         st.markdown(st.session_state.mock_question)
 
+        st.markdown("### ⏱️ Timer")
+        col_t1, col_t2, col_t3 = st.columns(3)
+        with col_t1:
+            if st.button("▶️ Start", key="start_timer"):
+                st.session_state.timer_start = datetime.now()
+                st.session_state.timer_running = True
+                st.session_state.timer_result = None
+        with col_t2:
+            if st.button("⏹️ Stop", key="stop_timer"):
+                if st.session_state.get("timer_running") and "timer_start" in st.session_state:
+                    elapsed = (datetime.now() - st.session_state.timer_start).seconds
+                    mins = elapsed // 60
+                    secs = elapsed % 60
+                    st.session_state.timer_result = f"{mins}m {secs}s"
+                    st.session_state.timer_running = False
+        with col_t3:
+            if st.button("🔄 Reset", key="reset_timer"):
+                st.session_state.pop("timer_start", None)
+                st.session_state.pop("timer_result", None)
+                st.session_state.timer_running = False
+
+        if st.session_state.get("timer_result"):
+            mins_taken = int(st.session_state.timer_result.split("m")[0])
+            st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
+            if mins_taken >= 20:
+                st.warning("Over 20 minutes — flag this topic for extra practice.")
+
+        st.markdown("### Your Answer")
         st.caption("Think out loud. Explain approach first, then solution — exactly like a real interview.")
 
-col_timer1, col_timer2, col_timer3 = st.columns(3)
-with col_timer1:
-    if st.button("▶️ Start Timer", key="start_timer"):
-        st.session_state.timer_start = datetime.now()
-        st.session_state.timer_running = True
-with col_timer2:
-    if st.button("⏹️ Stop Timer", key="stop_timer"):
-        if "timer_start" in st.session_state:
-            elapsed = (datetime.now() - st.session_state.timer_start).seconds
-            mins = elapsed // 60
-            secs = elapsed % 60
-            st.session_state.timer_result = f"{mins}m {secs}s"
-            st.session_state.timer_running = False
-with col_timer3:
-    if st.button("🔄 Reset", key="reset_timer"):
-        st.session_state.pop("timer_start", None)
-        st.session_state.pop("timer_result", None)
-        st.session_state.timer_running = False
-
-if st.session_state.get("timer_result"):
-    st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
-
-       mock_answer = st.text_area(
-    "Your answer:",
-    height=250,
-    placeholder="Explain your thought process first, then your approach, then your solution...",
-    key="mock_answer"
-)
+        mock_answer = st.text_area(
+            "Your answer:",
+            height=250,
+            placeholder="Explain your thought process first, then your approach, then your solution...",
+            key="mock_answer"
+        )
 
         if st.button("Evaluate My Answer", key="eval_mock"):
             if len(mock_answer.strip()) < 20:
