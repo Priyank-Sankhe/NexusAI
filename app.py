@@ -452,7 +452,9 @@ if "flow_plan" not in st.session_state:
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
 
-# ================= HERO SECTION =================
+# ================= HERO =================
+
+from datetime import datetime
 
 gap_log = st.session_state.db["gap_log"]
 day_logs = st.session_state.db["day_logs"]
@@ -470,36 +472,58 @@ weak_count = len({
 
 day_count = len(day_logs)
 
+hour = datetime.now().hour
+
+if hour < 12:
+    greeting = "Good Morning ☀️"
+elif hour < 17:
+    greeting = "Good Afternoon 🌤️"
+else:
+    greeting = "Good Evening 🌙"
+
+today = datetime.now().strftime("%A")
+
 hero = st.container(border=True)
 
 with hero:
-    st.title("🧠 NexusAI")
-    st.caption("Your AI Software Engineering Coach")
-    st.markdown(
-        "<span style='color:#C8A98B'>Built for focused learning • Gap Detection • FlowState • Mock Interviews</span>",
-        unsafe_allow_html=True
-    )
+
+    left,right = st.columns([4,1])
+
+    with left:
+        st.title("🧠 NexusAI")
+        st.subheader(f"{greeting}")
+
+        st.write(
+            "### Ready to continue your Software Engineering journey?"
+        )
+
+        st.caption(
+            "Every coding session brings you closer to becoming a Software Engineer."
+        )
+
+    with right:
+        st.markdown(f"### 📅 {today}")
 
 st.write("")
 
-c1, c2, c3 = st.columns(3)
+a,b,c = st.columns(3)
 
-with c1:
+with a:
     st.metric(
-        label="📚 Problems Solved",
-        value=problem_count
+        "📚 Problems Solved",
+        problem_count
     )
 
-with c2:
+with b:
     st.metric(
-        label="🎯 Weak Topics",
-        value=weak_count
+        "🎯 Weak Topics",
+        weak_count
     )
 
-with c3:
+with c:
     st.metric(
-        label="📅 Study Days",
-        value=day_count
+        "📅 Study Days",
+        day_count
     )
 
 st.write("")
