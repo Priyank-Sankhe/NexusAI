@@ -767,6 +767,16 @@ with mission_card:
         left, right = st.columns([3, 1])
         with left:
             st.subheader(mission["title"])
+
+            priority = mission.get("priority", 100)
+
+            if priority >= 90:
+                st.success("🔥 High Priority")
+            elif priority >= 60:
+                  st.warning("⚡ Medium Priority")
+            else:
+               st.info("📌 Low Priority")
+
             st.caption(mission["reason"])
             st.progress(mission["progress"] / 100)
 
