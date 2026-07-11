@@ -455,6 +455,7 @@ if "timer_running" not in st.session_state:
 # ================= HERO =================
 
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 gap_log = st.session_state.db["gap_log"]
 day_logs = st.session_state.db["day_logs"]
@@ -472,7 +473,10 @@ weak_count = len({
 
 day_count = len(day_logs)
 
-hour = datetime.now().hour
+now = datetime.now(ZoneInfo("Asia/Kolkata"))
+
+hour = now.hour
+today = now.strftime("%A")
 
 if hour < 12:
     greeting = "Good Morning ☀️"
@@ -480,8 +484,6 @@ elif hour < 17:
     greeting = "Good Afternoon 🌤️"
 else:
     greeting = "Good Evening 🌙"
-
-today = datetime.now().strftime("%A")
 
 hero = st.container(border=True)
 
