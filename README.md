@@ -14,7 +14,7 @@ I was losing study time to three specific problems:
 I built NexusAI to fix all three — and I use it every single day.
 
 ## What It Does
-Four integrated modes, one shared persistent data layer:
+Five integrated modes, one shared persistent data layer:
 
 ### 💬 Study Chat
 AI study assistant powered by Groq/Llama3. No token limits, no waiting.
@@ -38,12 +38,19 @@ Pre-loaded with curriculum context so you never re-explain your situation.
 - Topic performance scores across all attempts
 - Recent day logs with completion reviews
 
+### 🎤 Mock Interview
+- Generates role-specific technical interview questions by topic and difficulty
+- Built-in timer to track solution time against the 20-minute interview bar
+- Evaluates answers at the actual hiring bar — Strong Hire, Hire, or No Hire
+- Tells you exactly what a hired candidate would say for your weakest answer
+
 ## What Makes It Different From Just Using ChatGPT
 - **Persistent memory** — data survives every session, reload, and redeploy
 - **Spaced repetition logic** — knows what you're most likely to have forgotten
 - **Cross-tab intelligence** — FlowState automatically knows your GapFinder weak spots
 - **No token walls** — Groq's free tier handles unlimited daily usage
 - **Purpose-built context** — responds as a study mentor, not a general assistant
+- **Hiring-bar evaluation** — Mock Interview judges you the way a real interviewer would, not just correct/incorrect
 
 ## Tech Stack
 - Python
@@ -57,7 +64,7 @@ Pre-loaded with curriculum context so you never re-explain your situation.
 - ✅ V1: Study Chat + GapFinder + FlowState (core loop)
 - ✅ V2: Persistent storage + spaced repetition + cross-tab data sharing
 - ✅ V3: Dashboard — progress tracking, weak topic list, day log history
-- 🔄 V4: Mock Interview Mode — topic-specific interview simulation with hiring-bar evaluation
+- ✅ V4: Mock Interview — hiring-bar evaluation with timer and verdict
 - ⬜ V5: Streak tracking + consistency analytics
 - ⬜ V6: React frontend rebuild (post-LLD modules)
 
@@ -69,4 +76,4 @@ and it gets more useful every day I use it.
 
 ## Author
 Shivang — career switcher, Scaler Academy Software Development Program
-Target:Building in public
+Building in public.
