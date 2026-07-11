@@ -6,12 +6,150 @@ import requests
 st.set_page_config(page_title="NexusAI", layout="wide")
 st.markdown("""
 <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .block-container {
-        padding: 1rem 1rem 2rem 1rem !important;
-    }
+
+/* Hide Streamlit UI */
+#MainMenu {visibility: hidden;}
+header {visibility: hidden;}
+footer {visibility: hidden;}
+
+/* Import Font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* Main App Background */
+.stApp{
+    background:
+        radial-gradient(circle at top left, rgba(120,78,45,0.20), transparent 45%),
+        radial-gradient(circle at bottom right, rgba(70,45,30,0.25), transparent 40%),
+        linear-gradient(135deg,#18110d 0%,#241811 45%,#322116 100%);
+    color:white;
+    font-family:'Inter',sans-serif;
+}
+
+/* Blurred Background Overlay */
+.stApp::before{
+    content:"";
+    position:fixed;
+    inset:0;
+    background:
+        radial-gradient(circle, rgba(255,255,255,0.03) 2px, transparent 2px);
+    background-size:40px 40px;
+    filter:blur(2px);
+    opacity:.35;
+    pointer-events:none;
+    z-index:-1;
+}
+
+/* Main Container */
+.block-container{
+    padding:1.5rem 2rem 2rem 2rem !important;
+    max-width:1250px;
+}
+
+/* Metric Cards */
+[data-testid="metric-container"]{
+    background:rgba(58,40,28,.70);
+    backdrop-filter:blur(12px);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:18px;
+    padding:20px;
+    box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+
+/* Buttons */
+.stButton>button{
+    width:100%;
+    border:none;
+    border-radius:12px;
+    background:linear-gradient(135deg,#8A5A36,#B07647);
+    color:white;
+    font-weight:600;
+    transition:.25s;
+}
+
+.stButton>button:hover{
+    transform:translateY(-2px);
+    background:linear-gradient(135deg,#A56A40,#C78954);
+    box-shadow:0 10px 25px rgba(0,0,0,.35);
+}
+
+/* Inputs */
+.stTextInput input,
+.stTextArea textarea,
+.stSelectbox div[data-baseweb="select"],
+.stNumberInput input{
+    background:#2c211b !important;
+    color:white !important;
+    border-radius:12px !important;
+    border:1px solid rgba(255,255,255,.08) !important;
+}
+
+/* Slider */
+.stSlider{
+    padding-top:10px;
+}
+
+/* Tabs */
+.stTabs [role="tablist"]{
+    gap:10px;
+}
+
+.stTabs [role="tab"]{
+    background:#2b1d14;
+    border-radius:12px;
+    color:white;
+    padding:10px 20px;
+    border:none;
+}
+
+.stTabs [aria-selected="true"]{
+    background:#8A5A36 !important;
+    color:white !important;
+}
+
+/* Expanders */
+.streamlit-expanderHeader{
+    background:#2d211a;
+    border-radius:10px;
+}
+
+/* Chat Messages */
+[data-testid="stChatMessage"]{
+    background:rgba(55,38,28,.60);
+    border-radius:15px;
+    padding:15px;
+    border:1px solid rgba(255,255,255,.06);
+}
+
+/* Markdown Headings */
+h1,h2,h3,h4{
+    color:#F7E6D5;
+}
+
+/* Horizontal Rule */
+hr{
+    border:0;
+    height:1px;
+    background:rgba(255,255,255,.08);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{
+    width:10px;
+}
+
+::-webkit-scrollbar-track{
+    background:#1d1410;
+}
+
+::-webkit-scrollbar-thumb{
+    background:#7A5234;
+    border-radius:20px;
+}
+
+::-webkit-scrollbar-thumb:hover{
+    background:#A56A40;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
