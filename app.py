@@ -1820,7 +1820,7 @@ Do NOT provide any hints or solutions.
 
         )
 
-        st.session_state.mock_topic = topic
+        
 
         st.session_state.mock_company = company
 
