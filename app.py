@@ -778,9 +778,31 @@ with mission_card:
                st.info("📌 Low Priority")
 
             st.caption(mission["reason"])
+            if mission["status"] == MISSION_ACTIVE and mission["started_at"]:
+
+                started = datetime.strptime(
+                    mission["started_at"],
+                    "%Y-%m-%d %H:%M:%S"
+               )
+
+                elapsed_seconds = (
+                    datetime.now() - started
+                ).total_seconds()
+
+                total_seconds = mission["duration"] * 60
+
+                progress = min(
+                    100,
+                    int((elapsed_seconds / total_seconds) * 100)
+                )
+
+                mission["progress"] = progress
+
             st.progress(mission["progress"] / 100)
 
-            st.caption(f"Progress: {mission['progress']}%")
+            st.caption(
+                f"Progress: {mission['progress']}%"
+                )
         with right:
             st.metric("Duration", f"{mission['duration']} min")
             st.metric("Status", mission["status"].title())
