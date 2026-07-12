@@ -1,468 +1,169 @@
 import streamlit as st
 from groq import Groq
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import requests
 
 st.set_page_config(page_title="NexusAI", layout="wide")
 st.markdown("""
 <style>
-
-/* ==========================================
-   IMPORT FONT
-========================================== */
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
-
-/* ==========================================
-   HIDE STREAMLIT DEFAULTS
-========================================== */
 
 #MainMenu {visibility:hidden;}
 footer {visibility:hidden;}
 header {visibility:hidden;}
 
-
-/* ==========================================
-   APP BACKGROUND
-========================================== */
-
-.stApp{
-
+.stApp {
     background:
         radial-gradient(circle at 0% 0%, rgba(138,90,54,.18), transparent 30%),
         radial-gradient(circle at 100% 100%, rgba(91,58,38,.18), transparent 35%),
-        linear-gradient(
-            135deg,
-            #16110D 0%,
-            #211711 35%,
-            #2B1E17 65%,
-            #35241B 100%
-        );
-
+        linear-gradient(135deg, #16110D 0%, #211711 35%, #2B1E17 65%, #35241B 100%);
     color:#F5F1EC;
     font-family:'Inter',sans-serif;
 }
 
-
-/* ==========================================
-   SOFT BLURRED OVERLAY
-========================================== */
-
-.stApp::before{
-
+.stApp::before {
     content:"";
-
     position:fixed;
-
     inset:0;
-
-    background:
-
-        radial-gradient(
-            rgba(255,255,255,.04) 2px,
-            transparent 2px
-        );
-
+    background: radial-gradient(rgba(255,255,255,.04) 2px, transparent 2px);
     background-size:42px 42px;
-
     opacity:.25;
-
     filter:blur(2px);
-
     pointer-events:none;
-
     z-index:-1;
 }
 
-
-/* ==========================================
-   MAIN CONTAINER
-========================================== */
-
-.block-container{
-
+.block-container {
     max-width:1280px;
-
     padding-top:1.8rem !important;
-
     padding-bottom:2rem !important;
-
     padding-left:2rem !important;
-
     padding-right:2rem !important;
 }
 
+h1 { color:#FFF4E8; font-weight:800; letter-spacing:.5px; }
+h2 { color:#F7E6D5; font-weight:700; }
+h3 { color:#F4DDC8; }
+h4 { color:#EBD5BF; }
 
-/* ==========================================
-   HEADINGS
-========================================== */
-
-h1{
-
-    color:#FFF4E8;
-
-    font-weight:800;
-
-    letter-spacing:.5px;
-}
-
-h2{
-
-    color:#F7E6D5;
-
-    font-weight:700;
-}
-
-h3{
-
-    color:#F4DDC8;
-}
-
-h4{
-
-    color:#EBD5BF;
-}
-
-
-/* ==========================================
-   METRIC CARDS
-========================================== */
-
-[data-testid="metric-container"]{
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(67,47,34,.78),
-            rgba(48,33,24,.72)
-        );
-
+[data-testid="metric-container"] {
+    background: linear-gradient(180deg, rgba(67,47,34,.78), rgba(48,33,24,.72));
     border:1px solid rgba(255,255,255,.06);
-
     border-radius:18px;
-
     padding:20px;
-
     backdrop-filter:blur(14px);
-
-    box-shadow:
-
-        0 10px 30px rgba(0,0,0,.35),
-
-        inset 0 1px rgba(255,255,255,.05);
-
+    box-shadow: 0 10px 30px rgba(0,0,0,.35), inset 0 1px rgba(255,255,255,.05);
     transition:.25s;
 }
-
-[data-testid="metric-container"]:hover{
-
+[data-testid="metric-container"]:hover {
     transform:translateY(-3px);
-
     border-color:rgba(196,145,92,.35);
-
-    box-shadow:
-
-        0 15px 40px rgba(0,0,0,.45);
+    box-shadow: 0 15px 40px rgba(0,0,0,.45);
 }
 
-
-/* ==========================================
-   BUTTONS
-========================================== */
-
-.stButton>button{
-
+.stButton>button {
     width:100%;
-
     border:none;
-
     border-radius:14px;
-
     padding:.7rem;
-
     font-weight:700;
-
     color:white;
-
-    background:
-
-        linear-gradient(
-            135deg,
-            #8A5A36,
-            #B77A48
-        );
-
+    background: linear-gradient(135deg, #8A5A36, #B77A48);
     transition:.25s;
 }
-
-.stButton>button:hover{
-
+.stButton>button:hover {
     transform:translateY(-2px);
-
-    background:
-
-        linear-gradient(
-            135deg,
-            #B77A48,
-            #D9985C
-        );
-
-    box-shadow:
-
-        0 12px 28px rgba(0,0,0,.35);
+    background: linear-gradient(135deg, #B77A48, #D9985C);
+    box-shadow: 0 12px 28px rgba(0,0,0,.35);
 }
 
-
-/* ==========================================
-   TEXT INPUTS
-========================================== */
-
-.stTextInput input{
-
+.stTextInput input {
     background:#2A2019 !important;
-
     color:white !important;
-
     border-radius:12px !important;
-
     border:1px solid rgba(255,255,255,.08) !important;
 }
-
-.stTextArea textarea{
-
+.stTextArea textarea {
     background:#2A2019 !important;
-
     color:white !important;
-
     border-radius:14px !important;
-
     border:1px solid rgba(255,255,255,.08) !important;
 }
 
-
-/* ==========================================
-   SELECT BOX
-========================================== */
-
-.stSelectbox div[data-baseweb="select"]{
-
+.stSelectbox div[data-baseweb="select"] {
     background:#2A2019;
-
     border-radius:12px;
 }
 
+.stSlider { padding-top:12px; }
 
-/* ==========================================
-   SLIDER
-========================================== */
-
-.stSlider{
-
-    padding-top:12px;
-}
-
-
-/* ==========================================
-   TABS
-========================================== */
-
-.stTabs [role="tablist"]{
-
-    gap:12px;
-
-    margin-bottom:20px;
-}
-
-.stTabs [role="tab"]{
-
+.stTabs [role="tablist"] { gap:12px; margin-bottom:20px; }
+.stTabs [role="tab"] {
     background:#2C1F17;
-
     color:#D7C5B6;
-
     border-radius:12px;
-
     padding:12px 22px;
-
     transition:.25s;
-
     font-weight:600;
 }
-
-.stTabs [role="tab"]:hover{
-
-    background:#5A3A27;
-
-    color:white;
-}
-
-.stTabs [aria-selected="true"]{
-
-    background:
-
-        linear-gradient(
-            135deg,
-            #8A5A36,
-            #B77A48
-        ) !important;
-
+.stTabs [role="tab"]:hover { background:#5A3A27; color:white; }
+.stTabs [aria-selected="true"] {
+    background: linear-gradient(135deg, #8A5A36, #B77A48) !important;
     color:white !important;
 }
 
-
-/* ==========================================
-   CHAT
-========================================== */
-
-[data-testid="stChatMessage"]{
-
-    background:
-
-        rgba(59,42,30,.62);
-
+[data-testid="stChatMessage"] {
+    background: rgba(59,42,30,.62);
     border-radius:18px;
-
     border:1px solid rgba(255,255,255,.05);
-
     padding:18px;
-
     margin-bottom:14px;
 }
 
+.stSuccess { border-radius:12px; }
+.stWarning { border-radius:12px; }
+.stError { border-radius:12px; }
+.stInfo { border-radius:12px; }
 
-/* ==========================================
-   ALERTS
-========================================== */
+.streamlit-expanderHeader { background:#2C2018; border-radius:10px; }
 
-.stSuccess{
+hr { border:none; height:1px; background:rgba(255,255,255,.08); }
 
-    border-radius:12px;
-}
+::-webkit-scrollbar { width:10px; }
+::-webkit-scrollbar-track { background:#1A1411; }
+::-webkit-scrollbar-thumb { background:#7B5235; border-radius:20px; }
+::-webkit-scrollbar-thumb:hover { background:#AE7546; }
 
-.stWarning{
-
-    border-radius:12px;
-}
-
-.stError{
-
-    border-radius:12px;
-}
-
-.stInfo{
-
-    border-radius:12px;
-}
-
-
-/* ==========================================
-   EXPANDERS
-========================================== */
-
-.streamlit-expanderHeader{
-
-    background:#2C2018;
-
-    border-radius:10px;
-}
-
-
-/* ==========================================
-   DIVIDERS
-========================================== */
-
-hr{
-
-    border:none;
-
-    height:1px;
-
-    background:rgba(255,255,255,.08);
-}
-
-
-/* ==========================================
-   SCROLLBAR
-========================================== */
-
-::-webkit-scrollbar{
-
-    width:10px;
-}
-
-::-webkit-scrollbar-track{
-
-    background:#1A1411;
-}
-
-::-webkit-scrollbar-thumb{
-
-    background:#7B5235;
-
-    border-radius:20px;
-}
-
-::-webkit-scrollbar-thumb:hover{
-
-    background:#AE7546;
-}
-/* ==========================================
-   SIDEBAR
-========================================== */
-
-section[data-testid="stSidebar"]{
-
-    background:
-        linear-gradient(
-            180deg,
-            #20150F,
-            #2D1E16
-        );
-
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #20150F, #2D1E16);
     border-right:1px solid rgba(255,255,255,.08);
 }
-
-section[data-testid="stSidebar"] .block-container{
-
-    padding-top:1.8rem;
-}
-
-section[data-testid="stSidebar"] h2{
-
-    color:#FFF3E6;
-}
-
-section[data-testid="stSidebar"] .stButton>button{
-
+section[data-testid="stSidebar"] .block-container { padding-top:1.8rem; }
+section[data-testid="stSidebar"] h2 { color:#FFF3E6; }
+section[data-testid="stSidebar"] .stButton>button {
     background:#3B291E;
-
     border-radius:12px;
-
     margin-bottom:8px;
 }
+section[data-testid="stSidebar"] .stButton>button:hover { background:#7D5436; }
 
-section[data-testid="stSidebar"] .stButton>button:hover{
-
-    background:#7D5436;
-}
-.stAlert{
-
-    border-radius:16px;
-
-    border:none;
-
-    box-shadow:0 8px 20px rgba(0,0,0,.18);
-
-}
+.stAlert { border-radius:16px; border:none; box-shadow:0 8px 20px rgba(0,0,0,.18); }
 </style>
 """, unsafe_allow_html=True)
 
-
+# ==================== CONFIG ====================
 client = Groq(api_key=st.secrets["GROQ_API_KEY"])
 BIN_ID = st.secrets["JSONBIN_BIN_ID"]
 MASTER_KEY = st.secrets["JSONBIN_MASTER_KEY"]
 JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
 
+MISSION_PENDING = "pending"
+MISSION_ACTIVE = "active"
+MISSION_COMPLETED = "completed"
+MISSION_SKIPPED = "skipped"
+
+# ==================== STORAGE ====================
 def load_data():
     default_db = {
         "gap_log": [],
@@ -470,31 +171,26 @@ def load_data():
         "missions": [],
         "current_mission": None
     }
-
     try:
-        response = requests.get(
-            JSONBIN_URL,
-            headers={"X-Master-Key": MASTER_KEY}
-        )
-
+        response = requests.get(JSONBIN_URL, headers={"X-Master-Key": MASTER_KEY})
         data = response.json()["record"]
-
         for key, value in default_db.items():
             data.setdefault(key, value)
-
         return data
-
     except:
         return default_db
 
 def save_data(data):
     try:
-        requests.put(JSONBIN_URL,
+        requests.put(
+            JSONBIN_URL,
             headers={"X-Master-Key": MASTER_KEY, "Content-Type": "application/json"},
-            json=data)
+            json=data
+        )
     except:
         st.error("Failed to save data.")
 
+# ==================== HELPERS ====================
 def get_weak_topics(gap_log):
     weak = []
     today = datetime.now().date()
@@ -507,318 +203,36 @@ def get_weak_topics(gap_log):
                 weak.append({"topic": entry["topic"], "days_since": days_since, "score": score})
     return weak
 
-# ================= MISSION ENGINE =================
-
-MISSION_PENDING = "pending"
-MISSION_ACTIVE = "active"
-MISSION_COMPLETED = "completed"
-MISSION_SKIPPED = "skipped"
-
-
 def create_mission(title, reason, priority, duration):
-
     return {
-    "id": datetime.now().strftime("%Y%m%d%H%M%S"),
-
-    "title": title,
-
-    "reason": reason,
-
-    "priority": priority,
-
-    "duration": duration,
-
-    "status": MISSION_PENDING,
-
-    "progress": 0,
-
-    "started_at": None,
-
-    "completed_at": None,
-
-    "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-}
+        "id": datetime.now().strftime("%Y%m%d%H%M%S"),
+        "title": title,
+        "reason": reason,
+        "priority": priority,
+        "duration": duration,
+        "status": MISSION_PENDING,
+        "progress": 0,
+        "started_at": None,
+        "completed_at": None,
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
 
 def generate_daily_mission():
-
-    weak_topics = get_weak_topics(
-        st.session_state.db["gap_log"]
-    )
-
+    weak_topics = get_weak_topics(st.session_state.db["gap_log"])
     if not weak_topics:
-
         return create_mission(
             title="Complete Today's Scaler Session",
-            reason="No weak topics detected yet.",
+            reason="No weak topics detected yet — keep solving problems.",
             priority=100,
-            duration=1
+            duration=60
         )
-
-    weakest = sorted(
-        weak_topics,
-        key=lambda x: x["days_since"],
-        reverse=True
-    )[0]
-
+    weakest = sorted(weak_topics, key=lambda x: x["days_since"], reverse=True)[0]
     return create_mission(
-    title=f"Revise {weakest['topic']}",
-    reason=f"Last revised {weakest['days_since']} days ago",
-    priority=100,
-    duration=25
-)
-
-def update_recommended_topic():
-     weak_topics = get_weak_topics(
-        st.session_state.db["gap_log"]
-     )
-
-     if weak_topics:
-
-        weakest = sorted(
-            weak_topics,
-            key=lambda x: x["days_since"],
-            reverse=True
-        )[0]
-
-        st.session_state.brain["recommended_topic"] = weakest["topic"]
-
-     else:
-
-        st.session_state.brain["recommended_topic"] = None
-
-if "db" not in st.session_state:
-    st.session_state.db = load_data()
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "flow_plan" not in st.session_state:
-    st.session_state.flow_plan = None
-if "timer_running" not in st.session_state:
-    st.session_state.timer_running = False
-update_recommended_topic()
-if "brain" not in st.session_state:
-
-    st.session_state.brain = {
-
-    "current_focus": None,
-
-    "current_module": None,
-
-    "recommended_action": None,
-
-    "recommended_topic": None,
-
-    "last_activity": None,
-
-    "learning_mode": "normal",
-
-    "streak": 0,
-
-    "energy": "unknown"
-}
-# ================= CURRENT MISSION =================
-
-mission = st.session_state.db.get("current_mission")
-
-if mission:
-
-    mission.setdefault("progress", 0)
-    mission.setdefault("duration", 25)
-    mission.setdefault("status", MISSION_PENDING)
-    mission.setdefault("reason", "")
-    mission.setdefault("started_at", None)
-    mission.setdefault("completed_at", None)
-
-if st.session_state.db["current_mission"] is None:
-
-    mission = generate_daily_mission()
-
-    if mission:
-
-        st.session_state.db["missions"].append(mission)
-
-        st.session_state.db["current_mission"] = mission
-
-        st.session_state.brain["current_focus"] = mission["title"]
-
-        st.session_state.brain["recommended_action"] = "Start Mission"
-
-        save_data(st.session_state.db)
-
-# ================= SIDEBAR =================
-
-with st.sidebar:
-
-    st.markdown("## 🧠 NexusAI")
-
-    st.caption("AI Software Engineering Coach")
-
-    st.divider()
-
-    gap_log = st.session_state.db["gap_log"]
-    day_logs = st.session_state.db["day_logs"]
-
-    problems = len([
-        e for e in gap_log
-        if e.get("type") == "gap_entry"
-    ])
-
-    weak = len({
-        e["topic"]
-        for e in gap_log
-        if e.get("type") == "gap_entry"
-        and e.get("score",0) <= 1
-    })
-
-    st.metric("📚 Problems", problems)
-
-    st.metric("🎯 Weak Topics", weak)
-
-    st.metric("📅 Study Days", len(day_logs))
-
-    st.divider()
-
-    st.markdown("### 🚀 Today's Goal")
-
-    st.progress(0.60)
-
-    st.caption("Complete today's Scaler session")
-
-    st.divider()
-
-    st.markdown("### ⚡ Quick Actions")
-
-    st.button("💬 Study Chat", use_container_width=True)
-
-    st.button("🎯 GapFinder", use_container_width=True)
-
-    st.button("🎤 Mock Interview", use_container_width=True)
-
-    st.button("📊 Dashboard", use_container_width=True)
-
-    st.divider()
-
-    st.caption("NexusAI v1.0")
-
-# ================= HERO =================
-
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
-gap_log = st.session_state.db["gap_log"]
-day_logs = st.session_state.db["day_logs"]
-
-problem_count = len(
-    [e for e in gap_log if e.get("type") == "gap_entry"]
-)
-
-weak_count = len({
-    e["topic"]
-    for e in gap_log
-    if e.get("type") == "gap_entry"
-    and e.get("score", 0) <= 1
-})
-
-day_count = len(day_logs)
-
-now = datetime.now(ZoneInfo("Asia/Kolkata"))
-
-hour = now.hour
-today = now.strftime("%A")
-
-if hour < 12:
-    greeting = "Good Morning ☀️"
-elif hour < 17:
-    greeting = "Good Afternoon 🌤️"
-else:
-    greeting = "Good Evening 🌙"
-
-hero = st.container(border=True)
-
-with hero:
-
-    left,right = st.columns([4,1])
-
-    with left:
-        st.title("🧠 NexusAI")
-        st.subheader(f"{greeting}")
-
-        st.write(
-            "### Ready to continue your Software Engineering journey?"
-        )
-
-        st.caption(
-            "Every coding session brings you closer to becoming a Software Engineer."
-        )
-
-    with right:
-        st.markdown(f"### 📅 {today}")
-
-st.write("")
-
-a,b,c = st.columns(3)
-
-with a:
-    st.metric(
-        "📚 Problems Solved",
-        problem_count
+        title=f"Revise {weakest['topic']}",
+        reason=f"Last revised {weakest['days_since']} days ago — overdue for retest.",
+        priority=100,
+        duration=25
     )
-
-with b:
-    st.metric(
-        "🎯 Weak Topics",
-        weak_count
-    )
-
-with c:
-    st.metric(
-        "📅 Study Days",
-        day_count
-    )
-
-st.write("")
-# ================= AI RECOMMENDATION =================
-
-brain = st.session_state.brain
-
-recommendation = None
-
-if brain["current_focus"]:
-
-    recommendation = (
-        f"🎯 Continue working on **{brain['current_focus']}**."
-    )
-
-elif mission and mission["status"] == MISSION_PENDING:
-
-    recommendation = (
-        f"🚀 Start today's mission: **{mission['title']}**."
-    )
-
-else:
-
-    recommendation = (
-        "💡 Generate a new GapFinder problem to keep improving."
-    )
-
-st.info(recommendation)
-
-if mission and mission["status"] == MISSION_PENDING:
-
-    if st.button(
-        "🚀 Start Current Mission",
-        key="hero_start_mission",
-        use_container_width=True
-    ):
-
-        mission["status"] = MISSION_ACTIVE
-
-        mission["started_at"] = datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        )
-
-        save_data(st.session_state.db)
-
-        st.rerun()
 
 def section_header(icon, title, subtitle, accent):
     st.markdown(f"""
@@ -830,20 +244,149 @@ def section_header(icon, title, subtitle, accent):
         border-left:6px solid #D9A066;
         box-shadow:0 10px 25px rgba(0,0,0,.25);
     ">
-        <h2 style="margin:0;color:white;">
-            {icon} {title}
-        </h2>
-        <p style="
-            margin-top:8px;
-            color:#E6D7C8;
-            font-size:15px;
-        ">
-            {subtitle}
-        </p>
+        <h2 style="margin:0;color:white;">{icon} {title}</h2>
+        <p style="margin-top:8px;color:#E6D7C8;font-size:15px;">{subtitle}</p>
     </div>
     """, unsafe_allow_html=True)
 
-# ================= CURRENT MISSION =================
+# ==================== SESSION STATE ====================
+if "db" not in st.session_state:
+    st.session_state.db = load_data()
+if "messages" not in st.session_state:
+    st.session_state.messages = []
+if "flow_plan" not in st.session_state:
+    st.session_state.flow_plan = None
+if "timer_running" not in st.session_state:
+    st.session_state.timer_running = False
+if "brain" not in st.session_state:
+    st.session_state.brain = {
+        "current_focus": None,
+        "current_module": None,
+        "recommended_action": None,
+        "recommended_topic": None,
+        "last_activity": None,
+        "learning_mode": "normal",
+        "streak": 0,
+        "energy": "unknown"
+    }
+
+# ==================== MISSION ENGINE ====================
+def update_recommended_topic():
+    weak_topics = get_weak_topics(st.session_state.db["gap_log"])
+    if weak_topics:
+        weakest = sorted(weak_topics, key=lambda x: x["days_since"], reverse=True)[0]
+        st.session_state.brain["recommended_topic"] = weakest["topic"]
+    else:
+        st.session_state.brain["recommended_topic"] = None
+
+update_recommended_topic()
+
+if st.session_state.db["current_mission"] is None:
+    mission = generate_daily_mission()
+    if mission:
+        st.session_state.db["missions"].append(mission)
+        st.session_state.db["current_mission"] = mission
+        st.session_state.brain["current_focus"] = mission["title"]
+        st.session_state.brain["recommended_action"] = "Start Mission"
+        save_data(st.session_state.db)
+
+mission = st.session_state.db.get("current_mission")
+if mission:
+    mission.setdefault("progress", 0)
+    mission.setdefault("duration", 25)
+    mission.setdefault("status", MISSION_PENDING)
+    mission.setdefault("reason", "")
+    mission.setdefault("started_at", None)
+    mission.setdefault("completed_at", None)
+
+# ==================== SIDEBAR ====================
+with st.sidebar:
+    st.markdown("## 🧠 NexusAI")
+    st.caption("AI Software Engineering Coach")
+    st.divider()
+
+    gap_log_s = st.session_state.db["gap_log"]
+    day_logs_s = st.session_state.db["day_logs"]
+
+    st.metric("📚 Problems", len([e for e in gap_log_s if e.get("type") == "gap_entry"]))
+    st.metric("🎯 Weak Topics", len({e["topic"] for e in gap_log_s if e.get("type") == "gap_entry" and e.get("score", 0) <= 1}))
+    st.metric("📅 Study Days", len(day_logs_s))
+
+    st.divider()
+    st.markdown("### 🚀 Today's Goal")
+    st.progress(0.60)
+    st.caption("Complete today's Scaler session")
+    st.divider()
+
+    st.markdown("### ⚡ Quick Actions")
+    st.button("💬 Study Chat", use_container_width=True)
+    st.button("🎯 GapFinder", use_container_width=True)
+    st.button("🎤 Mock Interview", use_container_width=True)
+    st.button("📊 Dashboard", use_container_width=True)
+    st.divider()
+    st.caption("NexusAI v1.0")
+
+# ==================== HERO ====================
+now = datetime.now(ZoneInfo("Asia/Kolkata"))
+hour = now.hour
+today_name = now.strftime("%A")
+
+if hour < 12:
+    greeting = "Good Morning ☀️"
+elif hour < 17:
+    greeting = "Good Afternoon 🌤️"
+else:
+    greeting = "Good Evening 🌙"
+
+gap_log_h = st.session_state.db["gap_log"]
+day_logs_h = st.session_state.db["day_logs"]
+problem_count = len([e for e in gap_log_h if e.get("type") == "gap_entry"])
+weak_count = len({e["topic"] for e in gap_log_h if e.get("type") == "gap_entry" and e.get("score", 0) <= 1})
+day_count = len(day_logs_h)
+
+hero = st.container(border=True)
+with hero:
+    left, right = st.columns([4, 1])
+    with left:
+        st.title("🧠 NexusAI")
+        st.subheader(greeting)
+        st.write("### Ready to continue your Software Engineering journey?")
+        st.caption("Every coding session brings you closer to becoming a Software Engineer.")
+    with right:
+        st.markdown(f"### 📅 {today_name}")
+
+st.write("")
+
+a, b, c = st.columns(3)
+with a:
+    st.metric("📚 Problems Solved", problem_count)
+with b:
+    st.metric("🎯 Weak Topics", weak_count)
+with c:
+    st.metric("📅 Study Days", day_count)
+
+st.write("")
+
+# ==================== AI RECOMMENDATION ====================
+brain = st.session_state.brain
+
+if brain["current_focus"]:
+    recommendation = f"🎯 Continue working on **{brain['current_focus']}**."
+elif mission and mission["status"] == MISSION_PENDING:
+    recommendation = f"🚀 Start today's mission: **{mission['title']}**."
+else:
+    recommendation = "💡 Generate a new GapFinder problem to keep improving."
+
+st.info(recommendation)
+
+if mission and mission["status"] == MISSION_PENDING:
+    if st.button("🚀 Start Current Mission", key="hero_start_mission", use_container_width=True):
+        mission["status"] = MISSION_ACTIVE
+        mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        save_data(st.session_state.db)
+        st.rerun()
+
+# ==================== CURRENT MISSION ====================
 st.markdown("## 🎯 Current Mission")
 mission = st.session_state.db["current_mission"]
 mission_card = st.container(border=True)
@@ -853,75 +396,49 @@ with mission_card:
         left, right = st.columns([3, 1])
         with left:
             st.subheader(mission["title"])
-
             priority = mission.get("priority", 100)
-
             if priority >= 90:
                 st.success("🔥 High Priority")
             elif priority >= 60:
-                  st.warning("⚡ Medium Priority")
+                st.warning("⚡ Medium Priority")
             else:
-               st.info("📌 Low Priority")
+                st.info("📌 Low Priority")
 
             st.caption(mission["reason"])
+
             if mission["status"] == MISSION_ACTIVE and mission["started_at"]:
-
-                started = datetime.strptime(
-                    mission["started_at"],
-                    "%Y-%m-%d %H:%M:%S"
-               )
-
-                elapsed_seconds = (
-                    datetime.now() - started
-                ).total_seconds()
-
+                started = datetime.strptime(mission["started_at"], "%Y-%m-%d %H:%M:%S")
+                elapsed_seconds = (datetime.now() - started).total_seconds()
                 total_seconds = mission["duration"] * 60
-
-                progress = min(
-                    100,
-                    int((elapsed_seconds / total_seconds) * 100)
-                )
-
+                progress = min(100, int((elapsed_seconds / total_seconds) * 100))
                 mission["progress"] = progress
 
             st.progress(mission["progress"] / 100)
+            st.caption(f"Progress: {mission['progress']}%")
 
-            st.caption(
-                f"Progress: {mission['progress']}%"
-                )
         with right:
             st.metric("Duration", f"{mission['duration']} min")
             st.metric("Status", mission["status"].title())
-            
+
             if mission["status"] == MISSION_PENDING:
-                if st.button("▶ Start Mission", use_container_width=True):
+                if st.button("▶ Start Mission", key="start_mission_btn", use_container_width=True):
                     mission["status"] = MISSION_ACTIVE
                     mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     save_data(st.session_state.db)
                     st.rerun()
+
             if mission["status"] == MISSION_ACTIVE:
-
-                if st.button(
-                    "✅ Complete Mission",
-                    key="complete_mission_btn",
-                    use_container_width=True
-                  ):
-
-                   mission["status"] = MISSION_COMPLETED
-
-                   mission["progress"] = 100
-
-                   mission["completed_at"] = datetime.now().strftime(
-                       "%Y-%m-%d %H:%M:%S"
-                    )
-
-                   st.session_state.db["current_mission"] = None
-
-                   save_data(st.session_state.db)
-
-                   st.rerun()
+                if st.button("✅ Complete Mission", key="complete_mission_btn", use_container_width=True):
+                    mission["status"] = MISSION_COMPLETED
+                    mission["progress"] = 100
+                    mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    st.session_state.db["current_mission"] = None
+                    save_data(st.session_state.db)
+                    st.rerun()
     else:
         st.info("No active mission yet. Solve problems in GapFinder to generate one.")
+
+# ==================== TABS ====================
 tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
 ])
@@ -929,12 +446,8 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 # ==================== TAB 1 ====================
 with tab1:
     st.session_state.brain["current_module"] = "Study Chat"
-    section_header(
-    "💬",
-    "Study Chat",
-    "Ask anything about your Scaler journey. NexusAI remembers your learning context.",
-    "#385C7A"
-)
+    section_header("💬", "Study Chat", "Ask anything about your Scaler journey. NexusAI remembers your learning context.", "#385C7A")
+
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
@@ -959,28 +472,26 @@ STUDENT PROFILE:
 - Target: 18 LPA software development role
 - Known weak areas: sliding window, contribution technique (not yet cold-solved)
 
-TEACHING RULES — follow these exactly:
+TEACHING RULES:
 1. Never give the answer immediately. Ask what the student already knows first.
 2. Use first principles. Explain WHY before HOW.
 3. When explaining algorithms: give intuition first, then example, then code.
-4. When the student is wrong: identify the exact error, don't just say "incorrect."
-5. Use execution traces and concrete examples, never abstract explanations alone.
+4. When the student is wrong: identify the exact error precisely.
+5. Use execution traces and concrete examples always.
 6. After every explanation, ask one question to verify understanding.
-7. If the student asks for code directly: give pseudocode first, real code second.
-8. Calibrate depth to the question — don't over-explain simple syntax questions.
-9. For DSA problems: follow this sequence — brute force first, then optimize.
-10. Never sugarcoat. If understanding is shallow, say so directly.
+7. If asked for code directly: give pseudocode first, real code second.
+8. For DSA problems: brute force first, then optimize.
+9. Never sugarcoat. If understanding is shallow, say so directly.
 
 RESPONSE FORMAT:
-- Keep responses focused and concise — no padding, no unnecessary preamble
-- Use examples with actual numbers, not abstract variables alone
+- Concise and focused — no padding
 - Bold key terms on first use
-- End complex explanations with: "What's your understanding of this so far?"
+- End complex explanations with a verification question
 
-You are not a general assistant. You only answer questions related to:
-software engineering, DSA, Java, Python, system design, Scaler curriculum, 
-career strategy for software roles, and AI/ML concepts covered in Module 5.
-For anything outside this scope, redirect to the relevant topic."""
+SCOPE: Only answer questions about software engineering, DSA, Java, Python, 
+system design, Scaler curriculum, career strategy, and AI/ML from Module 5.
+Redirect anything outside this scope."""
+
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 response = client.chat.completions.create(
@@ -997,12 +508,7 @@ For anything outside this scope, redirect to the relevant topic."""
 # ==================== TAB 2 ====================
 with tab2:
     st.session_state.brain["current_module"] = "GapFinder"
-    section_header(
-    "🎯",
-    "GapFinder",
-    "Identify weak concepts and automatically generate targeted practice.",
-    "#7A5636"
-)
+    section_header("🎯", "GapFinder", "Identify weak concepts and automatically generate targeted practice.", "#7A5636")
     st.caption("Get a problem, solve it, get evaluated. Weakness tracked automatically.")
 
     weak_topics = get_weak_topics(st.session_state.db["gap_log"])
@@ -1015,9 +521,9 @@ with tab2:
     selected_topic = st.selectbox("Select a topic:", topics, key="gap_topic")
 
     if st.button("Generate Problem", key="gen_problem"):
-       st.session_state.brain["current_focus"] = selected_topic
-       st.session_state.brain["last_activity"] = "Generated a practice problem"
-       with st.spinner("Generating problem..."):
+        st.session_state.brain["current_focus"] = selected_topic
+        st.session_state.brain["last_activity"] = "Generated a practice problem"
+        with st.spinner("Generating problem..."):
             problem_prompt = f"""Generate a DSA problem specifically and only on: {selected_topic}.
 Format exactly like this:
 PROBLEM: [clear problem statement with example input and output]
@@ -1097,12 +603,7 @@ Be strict. Do not give 2 unless genuinely correct."""
 # ==================== TAB 3 ====================
 with tab3:
     st.session_state.brain["current_module"] = "FlowState"
-    section_header(
-    "⚡",
-    "FlowState",
-    "Enter deep work mode with distraction-free coding sessions.",
-    "#5C4B8A"
-)
+    section_header("⚡", "FlowState", "Enter deep work mode with distraction-free coding sessions.", "#5C4B8A")
     st.caption("3PM–11PM | Check-in at 7PM | End of day at 11PM")
 
     today = datetime.now().strftime("%Y-%m-%d")
@@ -1219,12 +720,7 @@ Give:
 # ==================== TAB 4 ====================
 with tab4:
     st.session_state.brain["current_module"] = "Dashboard"
-    section_header(
-    "📊",
-    "Dashboard",
-    "Track your progress and monitor long-term consistency.",
-    "#2E6B52"
-)
+    section_header("📊", "Dashboard", "Track your progress and monitor long-term consistency.", "#2E6B52")
     st.caption("Your progress at a glance.")
 
     db = st.session_state.db
@@ -1296,12 +792,8 @@ with tab4:
 
 # ==================== TAB 5 ====================
 with tab5:
-    section_header(
-    "🎤",
-    "Mock Interview",
-    "Practice technical interviews and receive AI-powered feedback.",
-    "#7A3F3F"
-)
+    st.session_state.brain["current_module"] = "Mock Interview"
+    section_header("🎤", "Mock Interview", "Practice technical interviews and receive AI-powered feedback.", "#7A3F3F")
     st.caption("Interview-format questions. Evaluated at the hiring bar.")
 
     db = st.session_state.db
