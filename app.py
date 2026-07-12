@@ -1546,76 +1546,1089 @@ Keep the feedback constructive but realistic.
     )
 
 elif st.session_state.current_page == "🎤 Mock Interview":
+
     st.session_state.brain["current_module"] = "Mock Interview"
-    section_header("🎤", "Mock Interview", "Practice technical interviews and receive AI-powered feedback.", "#7A3F3F")
+
+    section_header(
+        "🎤",
+        "Mock Interview",
+        "Practice interviews at the real hiring bar.",
+        "#7A3F3F"
+    )
+
+    brain = st.session_state.brain
 
     db = st.session_state.db
-    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
 
-    weak_topics_mock = list(set([e["topic"] for e in gap_log if e.get("score", 0) <= 1]))
-    if weak_topics_mock:
-        st.warning(f"⚠️ Recommended: Practice weak topics first — {', '.join(weak_topics_mock)}")
+    gap_log = [
+        e
+        for e in db["gap_log"]
+        if e.get("type") == "gap_entry"
+    ]
 
-    topics = ["Prefix Sum", "Sliding Window", "Contribution Technique", "Bit Manipulation", "2D Matrices", "Strings"]
-
-    col1, col2 = st.columns(2)
-    with col1: interview_topic = st.selectbox("Select topic:", topics, key="mock_topic_select")
-    with col2: difficulty = st.selectbox("Difficulty:", ["Easy", "Medium", "Hard"], key="mock_diff_select")
-
-    if st.button("Start Interview Question", key="start_interview"):
-        st.session_state.brain["current_focus"] = interview_topic
-        st.session_state.brain["last_activity"] = "Started a mock interview"
-        with st.spinner("Preparing your interview question..."):
-            question_prompt = f"You are a technical interviewer at a product company hiring for an 18-22 LPA role.\n\nGenerate ONE interview question on: {interview_topic}\nDifficulty: {difficulty}\n\nFormat exactly:\nQUESTION: [problem statement, clear and complete]\nWHAT WE'RE TESTING: [skill this evaluates]\nTIME LIMIT: [realistic time in minutes]\nWHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cover]"
-            q_response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": f"You are a strict technical interviewer for a {difficulty} {interview_topic} question."},
-                    {"role": "user", "content": question_prompt}
-                ]
+    weak_topics = sorted(
+        list(
+            set(
+                e["topic"]
+                for e in gap_log
+                if e.get("score",0) <= 1
             )
-            st.session_state.mock_question = q_response.choices[0].message.content
-            st.session_state.mock_topic_val = interview_topic
-            st.session_state.mock_difficulty_val = difficulty
+        )
+    )
+
+    if weak_topics:
+
+        st.warning(
+            "⚠ Recommended Weak Topics: "
+            + ", ".join(weak_topics)
+        )
+
+    mission = db.get("current_mission")
+
+    st.markdown("## 🎯 Interview Control Center")
+
+    interview_card = st.container(border=True)
+
+    with interview_card:
+
+        col1,col2 = st.columns(2)
+
+        with col1:
+
+            company = st.selectbox(
+
+                "Company Type",
+
+                [
+
+                    "FAANG",
+
+                    "Product Company",
+
+                    "Startup",
+
+                    "Service Company"
+
+                ],
+
+                key="mock_company"
+
+            )
+
+            role = st.selectbox(
+
+                "Target Role",
+
+                [
+
+                    "SDE-1",
+
+                    "SDE-2"
+
+                ],
+
+                key="mock_role"
+
+            )
+
+        with col2:
+
+            topic = st.selectbox(
+
+                "Interview Topic",
+
+                [
+
+                    "Prefix Sum",
+
+                    "Sliding Window",
+
+                    "Contribution Technique",
+
+                    "Bit Manipulation",
+
+                    "2D Matrices",
+
+                    "Strings"
+
+                ],
+
+                index=0,
+
+                key="mock_topic"
+
+            )
+
+            difficulty = st.selectbox(
+
+                "Difficulty",
+
+                [
+
+                    "Easy",
+
+                    "Medium",
+
+                    "Hard"
+
+                ],
+
+                index=1,
+
+                key="mock_difficulty"
+
+            )
+
+    st.write("")
+
+    st.markdown("## 🧠 AI Interview Context")
+
+    context_card = st.container(border=True)
+
+    with context_card:
+
+        c1,c2,c3 = st.columns(3)
+
+        with c1:
+
+            st.metric(
+
+                "Current Focus",
+
+                brain.get("current_focus") or "None"
+
+            )
+
+        with c2:
+
+            st.metric(
+
+                "Recommended",
+
+                brain.get("recommended_topic") or "None"
+
+            )
+
+        with c3:
+
+            if mission:
+
+                st.metric(
+
+                    "Mission",
+
+                    mission["status"].title()
+
+                )
+
+            else:
+
+                st.metric(
+
+                    "Mission",
+
+                    "None"
+
+                )
+
+    st.write("")
+
+    st.markdown("## 🚀 Start Interview")
+
+    if st.button(
+
+        "Generate Interview",
+
+        use_container_width=True,
+
+        key="generate_interview_btn"
+
+    ):
+
+        brain["last_activity"] = "Started Mock Interview"
+
+        brain["current_focus"] = topic
+
+        prompt = f"""
+You are a Senior Software Engineer interviewing for a {company}.
+
+Role:
+{role}
+
+Difficulty:
+{difficulty}
+
+Topic:
+{topic}
+
+Generate ONE interview question.
+
+Format:
+
+# Question
+
+# Constraints
+
+# Example
+
+# What Interviewers Expect
+
+Do NOT provide any hints or solutions.
+"""
+
+        with st.spinner(
+
+            "Preparing interview..."
+
+        ):
+
+            response = client.chat.completions.create(
+
+                model="llama-3.1-8b-instant",
+
+                messages=[
+
+                    {
+
+                        "role":"system",
+
+                        "content":"You are a senior interviewer."
+
+                    },
+
+                    {
+
+                        "role":"user",
+
+                        "content":prompt
+
+                    }
+
+                ]
+
+            )
+
+        st.session_state.mock_question = (
+
+            response
+
+            .choices[0]
+
+            .message
+
+            .content
+
+        )
+
+        st.session_state.mock_topic = topic
+
+        st.session_state.mock_company = company
+
+        st.session_state.mock_role = role
+
+        st.session_state.mock_difficulty = difficulty
+
+        st.success(
+
+            "Interview generated."
+
+        )
+
+    st.write("")
+    # ==========================================================
+    # LIVE INTERVIEW
+    # ==========================================================
 
     if "mock_question" in st.session_state:
-        st.markdown("### Your Question")
-        st.markdown(st.session_state.mock_question)
 
-        mock_timer_component()
+        st.markdown("## 💼 Live Interview")
 
-        st.markdown("### Your Answer")
-        mock_answer = st.text_area("Your answer:", height=250, placeholder="Explain your thought process first, then your approach, then your solution...", key="mock_answer")
+        interview_container = st.container(border=True)
 
-        if st.button("Evaluate My Answer", key="eval_mock"):
-            if len(mock_answer.strip()) < 20: st.warning("Write a real answer before evaluating.")
-            else:
-                with st.spinner("Evaluating at the hiring bar..."):
-                    eval_prompt = f"You are a senior engineer interviewing for an 18-22 LPA role.\n\nQuestion: {st.session_state.mock_question}\nCandidate's answer: {mock_answer}\nTopic: {st.session_state.mock_topic_val}\nDifficulty: {st.session_state.mock_difficulty_val}\n\nEvaluate at the actual hiring bar:\n1. COMMUNICATION: Did they explain thinking before jumping to code?\n2. APPROACH: Correct and logical?\n3. SOLUTION QUALITY: Correct, optimal, or flawed?\n4. WHAT IMPRESSED: Specific positives\n5. WHAT WOULD REJECT: Specific dealbreakers\n6. HIRING VERDICT: \"Strong Hire\", \"Hire\", or \"No Hire\" — one sentence reason\n7. WHAT TO SAY INSTEAD: Show exactly what a hired candidate would say for the weakest part"
-                    eval_response = client.chat.completions.create(
-                        model="llama-3.3-70b-specdec",
-                        messages=[
-                            {"role": "system", "content": "You are a strict senior engineer interviewer. No sugarcoating. Weak answers get No Hire."},
-                            {"role": "user", "content": eval_prompt}
-                        ]
+        with interview_container:
+
+            st.markdown(st.session_state.mock_question)
+
+            st.info(
+                f"""
+**Company:** {st.session_state.mock_company}
+
+**Role:** {st.session_state.mock_role}
+
+**Difficulty:** {st.session_state.mock_difficulty}
+
+**Topic:** {st.session_state.mock_topic}
+"""
+            )
+
+        st.write("")
+
+        st.markdown("## ⏱ Interview Timer")
+
+        timer_container = st.container(border=True)
+
+        with timer_container:
+
+            interview_time = st.selectbox(
+
+                "Interview Duration",
+
+                [
+
+                    20,
+
+                    30,
+
+                    45,
+
+                    60
+
+                ],
+
+                index=1,
+
+                key="mock_duration"
+
+            )
+
+            c1,c2,c3 = st.columns(3)
+
+            with c1:
+
+                if st.button(
+
+                    "▶ Start Interview",
+
+                    use_container_width=True,
+
+                    key="mock_start_btn"
+
+                ):
+
+                    st.session_state.mock_running = True
+
+                    st.session_state.mock_start = datetime.now()
+
+                    brain["last_activity"] = "Interview Started"
+
+                    st.success(
+                        "Interview timer started."
                     )
-                    evaluation = eval_response.choices[0].message.content
-                    st.markdown("### Interviewer Evaluation")
-                    st.markdown(evaluation)
 
+            with c2:
+
+                if st.button(
+
+                    "⏸ Pause",
+
+                    use_container_width=True,
+
+                    key="mock_pause_btn"
+
+                ):
+
+                    st.session_state.mock_running = False
+
+                    brain["last_activity"] = "Interview Paused"
+
+                    st.warning(
+                        "Interview paused."
+                    )
+
+            with c3:
+
+                if st.button(
+
+                    "⏹ End Interview",
+
+                    use_container_width=True,
+
+                    key="mock_stop_btn"
+
+                ):
+
+                    st.session_state.mock_running = False
+
+                    brain["last_activity"] = "Interview Finished"
+
+                    st.success(
+                        "Interview ended."
+                    )
+
+        if st.session_state.get("mock_running"):
+
+            elapsed = int(
+
+                (
+
+                    datetime.now()
+
+                    -
+
+                    st.session_state.mock_start
+
+                ).total_seconds()
+
+                /
+
+                60
+
+            )
+
+            remaining = max(
+
+                0,
+
+                interview_time - elapsed
+
+            )
+
+            progress = min(
+
+                100,
+
+                int(
+
+                    elapsed
+
+                    /
+
+                    interview_time
+
+                    *
+
+                    100
+
+                )
+
+            )
+
+            st.progress(
+
+                progress
+
+            )
+
+            left,right = st.columns(2)
+
+            with left:
+
+                st.metric(
+
+                    "Elapsed",
+
+                    f"{elapsed} min"
+
+                )
+
+            with right:
+
+                st.metric(
+
+                    "Remaining",
+
+                    f"{remaining} min"
+
+                )
+
+            if remaining == 0:
+
+                st.warning(
+                    "Interview time is over."
+                )
+
+        st.write("")
+            # ==========================================================
+    # CANDIDATE WORKSPACE
+    # ==========================================================
+
+    if "mock_question" in st.session_state:
+
+        st.markdown("## 👨‍💻 Candidate Workspace")
+
+        workspace = st.container(border=True)
+
+        with workspace:
+
+            clarification = st.text_area(
+
+                "Clarification Questions (optional)",
+
+                placeholder="What would you ask the interviewer before coding?",
+
+                height=100,
+
+                key="mock_clarification"
+
+            )
+
+            brute_force = st.text_area(
+
+                "Brute Force Approach",
+
+                placeholder="Explain your first solution.",
+
+                height=150,
+
+                key="mock_bruteforce"
+
+            )
+
+            optimal = st.text_area(
+
+                "Optimal Approach",
+
+                placeholder="Explain your optimized solution.",
+
+                height=180,
+
+                key="mock_optimal"
+
+            )
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+
+                time_complexity = st.text_input(
+
+                    "Time Complexity",
+
+                    placeholder="O(n)",
+
+                    key="mock_time"
+
+                )
+
+            with col2:
+
+                space_complexity = st.text_input(
+
+                    "Space Complexity",
+
+                    placeholder="O(1)",
+
+                    key="mock_space"
+
+                )
+
+            final_code = st.text_area(
+
+                "Final Code",
+
+                placeholder="Paste your Java / Python / C++ solution here.",
+
+                height=300,
+
+                key="mock_code"
+
+            )
+
+        st.write("")
+
+        ready = (
+            len(optimal.strip()) > 15
+            and len(final_code.strip()) > 20
+        )
+
+        if ready:
+
+            st.success(
+                "✅ Solution ready for evaluation."
+            )
+
+        else:
+
+            st.info(
+                "Complete the optimal approach and final code before submitting."
+            )
+
+        st.write("")
+
+        st.markdown("## 📦 Submission")
+
+        submit_container = st.container(border=True)
+
+        with submit_container:
+
+            if st.button(
+
+                "🚀 Submit Interview",
+
+                use_container_width=True,
+
+                key="mock_submit"
+
+            ):
+
+                if not ready:
+
+                    st.warning(
+                        "Complete your solution before submitting."
+                    )
+
+                else:
+
+                    brain["last_activity"] = "Submitted Mock Interview"
+
+                    st.session_state.mock_submission = {
+
+                        "company": st.session_state.mock_company,
+
+                        "role": st.session_state.mock_role,
+
+                        "difficulty": st.session_state.mock_difficulty,
+
+                        "topic": st.session_state.mock_topic,
+
+                        "clarification": clarification,
+
+                        "bruteforce": brute_force,
+
+                        "optimal": optimal,
+
+                        "time": time_complexity,
+
+                        "space": space_complexity,
+
+                        "code": final_code
+
+                    }
+
+                    st.success(
+                        "Interview submitted successfully."
+                    )
+
+        st.write("")
+            # ==========================================================
+    # SENIOR ENGINEER EVALUATION
+    # ==========================================================
+
+    if "mock_submission" in st.session_state:
+
+        st.markdown("## 🧑‍⚖️ Senior Engineer Evaluation")
+
+        evaluation_container = st.container(border=True)
+
+        with evaluation_container:
+
+            if st.button(
+
+                "📝 Evaluate Interview",
+
+                use_container_width=True,
+
+                key="evaluate_mock_btn"
+
+            ):
+
+                submission = st.session_state.mock_submission
+
+                evaluation_prompt = f"""
+You are a Senior Software Engineer conducting a final interview evaluation.
+
+Interview Details
+
+Company:
+{submission['company']}
+
+Role:
+{submission['role']}
+
+Difficulty:
+{submission['difficulty']}
+
+Topic:
+{submission['topic']}
+
+Interview Question
+
+{st.session_state.mock_question}
+
+Candidate Clarification Questions
+
+{submission['clarification']}
+
+Brute Force Approach
+
+{submission['bruteforce']}
+
+Optimal Approach
+
+{submission['optimal']}
+
+Time Complexity
+
+{submission['time']}
+
+Space Complexity
+
+{submission['space']}
+
+Final Code
+
+{submission['code']}
+
+Evaluate like a real senior interviewer.
+
+Return exactly in this format.
+
+# Problem Understanding
+Score /10
+
+# Communication
+Score /10
+
+# Algorithm Selection
+Score /10
+
+# Optimization
+Score /10
+
+# Time Complexity
+Score /10
+
+# Space Complexity
+Score /10
+
+# Code Quality
+Score /10
+
+# Edge Cases
+Score /10
+
+# Overall Feedback
+
+# Final Verdict
+
+Choose ONLY one:
+
+Strong Hire
+
+Hire
+
+Lean Hire
+
+Lean No Hire
+
+No Hire
+
+Do not be generous.
+"""
+
+                with st.spinner(
+
+                    "Senior engineer evaluating..."
+
+                ):
+
+                    response = client.chat.completions.create(
+
+                        model="llama-3.1-8b-instant",
+
+                        messages=[
+
+                            {
+
+                                "role":"system",
+
+                                "content":"You are a senior software engineer interviewer. Be extremely honest."
+
+                            },
+
+                            {
+
+                                "role":"user",
+
+                                "content":evaluation_prompt
+
+                            }
+
+                        ]
+
+                    )
+
+                evaluation = (
+
+                    response
+
+                    .choices[0]
+
+                    .message
+
+                    .content
+
+                )
+
+                st.session_state.mock_evaluation = evaluation
+
+        if "mock_evaluation" in st.session_state:
+
+            st.markdown("### 📋 Interview Report")
+
+            report = st.container(border=True)
+
+            with report:
+
+                st.markdown(
+
+                    st.session_state.mock_evaluation
+
+                )
+
+            verdict = "Unknown"
+
+            report_text = st.session_state.mock_evaluation
+
+            if "Strong Hire" in report_text:
+
+                verdict = "Strong Hire"
+
+            elif "\nHire" in report_text:
+
+                verdict = "Hire"
+
+            elif "Lean Hire" in report_text:
+
+                verdict = "Lean Hire"
+
+            elif "Lean No Hire" in report_text:
+
+                verdict = "Lean No Hire"
+
+            elif "No Hire" in report_text:
+
+                verdict = "No Hire"
+
+            if verdict == "Strong Hire":
+
+                st.success("🏆 Strong Hire")
+
+            elif verdict == "Hire":
+
+                st.success("✅ Hire")
+
+            elif verdict == "Lean Hire":
+
+                st.info("👍 Lean Hire")
+
+            elif verdict == "Lean No Hire":
+
+                st.warning("⚠️ Lean No Hire")
+
+            else:
+
+                st.error("❌ No Hire")
+
+        st.write("")
+            # ==========================================================
+    # SAVE INTERVIEW
+    # ==========================================================
+
+    if "mock_evaluation" in st.session_state:
+
+        st.markdown("## 💾 Save Interview")
+
+        save_container = st.container(border=True)
+
+        with save_container:
+
+            if st.button(
+
+                "Save Interview",
+
+                use_container_width=True,
+
+                key="save_mock_interview"
+
+            ):
+
+                evaluation = st.session_state.mock_evaluation
+
+                verdict = "Unknown"
+
+                if "Strong Hire" in evaluation:
+                    verdict = "Strong Hire"
+                elif "Lean Hire" in evaluation:
+                    verdict = "Lean Hire"
+                elif "Lean No Hire" in evaluation:
+                    verdict = "Lean No Hire"
+                elif "\nHire" in evaluation:
+                    verdict = "Hire"
+                elif "No Hire" in evaluation:
                     verdict = "No Hire"
-                    if "Strong Hire" in evaluation:
-                        verdict = "Strong Hire"; st.success("✅ Strong Hire.")
-                    elif "No Hire" in evaluation:
-                        st.error("❌ No Hire — Review this topic.")
-                    else:
-                        verdict = "Hire"; st.warning("🟡 Hire — Room for improvement.")
 
-                    st.session_state.db["gap_log"].append({
-                        "type": "mock_entry",
-                        "topic": st.session_state.mock_topic_val,
-                        "difficulty": st.session_state.mock_difficulty_val,
-                        "date": datetime.now().strftime("%Y-%m-%d"),
-                        "verdict": verdict
-                    })
-                    save_data(st.session_state.db)
+                interview_record = {
+
+                    "date": datetime.now().strftime("%Y-%m-%d"),
+
+                    "company": st.session_state.mock_company,
+
+                    "role": st.session_state.mock_role,
+
+                    "difficulty": st.session_state.mock_difficulty,
+
+                    "topic": st.session_state.mock_topic,
+
+                    "verdict": verdict,
+
+                    "evaluation": evaluation
+
+                }
+
+                if "mock_history" not in st.session_state.db:
+
+                    st.session_state.db["mock_history"] = []
+
+                st.session_state.db["mock_history"].append(
+                    interview_record
+                )
+
+                brain["last_activity"] = "Completed Mock Interview"
+
+                brain["current_focus"] = None
+
+                update_recommended_topic()
+
+                save_data(
+                    st.session_state.db
+                )
+
+                st.success(
+                    "Interview saved successfully."
+                )
+
+    st.write("")
+
+    # ==========================================================
+    # INTERVIEW ANALYTICS
+    # ==========================================================
+
+    st.markdown("## 📊 Interview Analytics")
+
+    analytics = st.container(border=True)
+
+    with analytics:
+
+        history = st.session_state.db.get(
+            "mock_history",
+            []
+        )
+
+        total = len(history)
+
+        strong = sum(
+            1
+            for x in history
+            if x["verdict"] == "Strong Hire"
+        )
+
+        hire = sum(
+            1
+            for x in history
+            if x["verdict"] == "Hire"
+        )
+
+        lean_hire = sum(
+            1
+            for x in history
+            if x["verdict"] == "Lean Hire"
+        )
+
+        nohire = sum(
+            1
+            for x in history
+            if x["verdict"] in [
+                "Lean No Hire",
+                "No Hire"
+            ]
+        )
+
+        c1,c2,c3,c4 = st.columns(4)
+
+        with c1:
+
+            st.metric(
+                "Interviews",
+                total
+            )
+
+        with c2:
+
+            st.metric(
+                "Hire+",
+                strong + hire
+            )
+
+        with c3:
+
+            st.metric(
+                "Lean Hire",
+                lean_hire
+            )
+
+        with c4:
+
+            st.metric(
+                "No Hire",
+                nohire
+            )
+
+    st.write("")
+
+    # ==========================================================
+    # RECENT INTERVIEWS
+    # ==========================================================
+
+    history = st.session_state.db.get(
+        "mock_history",
+        []
+    )
+
+    if history:
+
+        st.markdown("## 📜 Recent Interviews")
+
+        for interview in reversed(history[-5:]):
+
+            with st.expander(
+
+                f"{interview['date']} • {interview['company']} • {interview['verdict']}"
+
+            ):
+
+                st.write(
+                    f"**Role:** {interview['role']}"
+                )
+
+                st.write(
+                    f"**Difficulty:** {interview['difficulty']}"
+                )
+
+                st.write(
+                    f"**Topic:** {interview['topic']}"
+                )
+
+                st.markdown("---")
+
+                st.markdown(
+                    interview["evaluation"]
+                )
+
+    st.write("")
+
+    # ==========================================================
+    # DASHBOARD SYNC
+    # ==========================================================
+
+    update_recommended_topic()
+
+    save_data(
+        st.session_state.db
+    )
+
+    st.divider()
+
+    st.caption(
+        "Mock Interview automatically synchronizes with your AI Brain, Dashboard and Mission Engine."
+    )
