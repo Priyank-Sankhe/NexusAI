@@ -695,80 +695,855 @@ elif st.session_state.current_page == "🎯 GapFinder":
                     else: st.success(f"✅ {st.session_state.current_topic} marked solid.")
 
 elif st.session_state.current_page == "⚡ FlowState":
+
     st.session_state.brain["current_module"] = "FlowState"
-    section_header("⚡", "FlowState", "Enter deep work mode with distraction-free coding sessions.", "#5C4B8A")
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    weak = get_weak_topics(st.session_state.db["gap_log"])
-    weak_context = f"Weak topics due for retest: {', '.join(set([w['topic'] for w in weak]))}" if weak else "No weak topics flagged yet."
+    section_header(
+        "⚡",
+        "FlowState",
+        "Deep work. Zero distractions. Maximum consistency.",
+        "#5C4B8A"
+    )
 
-    st.markdown("### 📋 Daily Planning")
-    priority1 = st.text_input("Priority 1 (most critical):", placeholder="e.g. Cold-solve sliding window")
-    priority2 = st.text_input("Priority 2:", placeholder="e.g. Module 5 Day 51 notes")
-    priority3 = st.text_input("Priority 3:", placeholder="e.g. NexusAI bug fixes")
-    hours_available = st.slider("Hours available today:", 1, 8, 6)
+    brain = st.session_state.brain
+    mission = st.session_state.db.get("current_mission")
 
-    if st.button("Generate My Plan", key="gen_plan"):
-        st.session_state.brain["last_activity"] = "Planning today's study session"
-        if not priority1.strip(): st.warning("Enter at least Priority 1.")
-        else:
-            with st.spinner("Building your day..."):
-                plan_prompt = f"You are a strict study planner.\nStudy window: 3PM to 11PM ({hours_available} hours available)\nCheck-in: 7PM | End of day: 11PM\nPriorities:\n1. {priority1}\n2. {priority2 if priority2 else 'None'}\n3. {priority3 if priority3 else 'None'}\nContext: {weak_context}\nGenerate a specific hour-by-hour plan from 3PM to 11PM.\nInclude short breaks. Be realistic.\nIf weak topics exist, schedule retest time.\nEnd with: MOST CRITICAL TASK TODAY: [one task]"
-                plan_response = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
-                    messages=[
-                        {"role": "system", "content": "You are a strict, realistic study planner. Specific time blocks only."},
-                        {"role": "user", "content": plan_prompt}
-                    ]
+    st.markdown("## 🎯 Mission Control")
+
+    mission_card = st.container(border=True)
+
+    with mission_card:
+
+        if mission:
+
+            left,right = st.columns([3,1])
+
+            with left:
+
+                st.subheader(mission["title"])
+
+                st.caption(mission["reason"])
+
+                st.progress(mission["progress"]/100)
+
+            with right:
+
+                st.metric(
+                    "Progress",
+                    f"{mission['progress']}%"
                 )
-                st.session_state.flow_plan = plan_response.choices[0].message.content
+
+                st.metric(
+                    "Status",
+                    mission["status"].title()
+                )
+
+        else:
+
+            st.info(
+                "No mission available."
+            )
+
+    st.write("")
+
+    st.markdown("## 🧠 AI Focus")
+
+    c1,c2 = st.columns(2)
+
+    with c1:
+
+        st.info(
+            f"Current Focus\n\n"
+            f"**{brain.get('current_focus') or 'None'}**"
+        )
+
+    with c2:
+
+        st.info(
+            f"Recommended Topic\n\n"
+            f"**{brain.get('recommended_topic') or 'None'}**"
+        )
+
+    st.write("")
+
+    st.markdown("## 🎯 Focus Session")
+
+    focus_card = st.container(border=True)
+
+    with focus_card:
+
+        duration = st.selectbox(
+
+            "Focus Duration",
+
+            [
+
+                25,
+
+                50,
+
+                90
+
+            ],
+
+            key="focus_duration"
+
+        )
+
+        col1,col2,col3 = st.columns(3)
+
+        with col1:
+
+            if st.button(
+
+                "▶ Start Focus",
+
+                use_container_width=True,
+
+                key="focus_start_btn"
+
+            ):
+
+                st.session_state.focus_running = True
+
+                st.session_state.focus_start = datetime.now()
+
+                brain["last_activity"] = "Started Focus Session"
+
+                save_data(st.session_state.db)
+
+                st.success("Focus session started.")
+
+        with col2:
+
+            if st.button(
+
+                "⏸ Pause",
+
+                use_container_width=True,
+
+                key="focus_pause_btn"
+
+            ):
+
+                st.session_state.focus_running = False
+
+                brain["last_activity"] = "Paused Focus Session"
+
+                st.warning("Focus paused.")
+
+        with col3:
+
+            if st.button(
+
+                "✅ Complete",
+
+                use_container_width=True,
+
+                key="focus_complete_btn"
+
+            ):
+
+                if st.session_state.get("focus_start"):
+
+                    elapsed = int(
+
+                        (
+
+                            datetime.now()
+
+                            -
+
+                            st.session_state.focus_start
+
+                        ).total_seconds()
+
+                        /
+
+                        60
+
+                    )
+
+                else:
+
+                    elapsed = 0
+
+                st.success(
+
+                    f"Completed {elapsed} minute(s)."
+
+                )
+
+                brain["last_activity"] = "Completed Focus Session"
+
+                brain["current_focus"] = None
+
+                if mission:
+
+                    mission["progress"] = min(
+
+                        100,
+
+                        mission["progress"] + 20
+
+                    )
+
+                    if mission["progress"] >= 100:
+
+                        mission["status"] = MISSION_COMPLETED
+
+                        mission["completed_at"] = datetime.now().strftime(
+
+                            "%Y-%m-%d %H:%M:%S"
+
+                        )
+
+                save_data(st.session_state.db)
+
+                st.session_state.focus_running = False
+
+    st.write("")
+
+    st.markdown("## 📋 AI Daily Planner")
+        today = datetime.now().strftime("%Y-%m-%d")
+
+    weak_topics = get_weak_topics(
+        st.session_state.db["gap_log"]
+    )
+
+    weak_context = (
+        ", ".join(
+            sorted(
+                list(
+                    set(
+                        w["topic"] for w in weak_topics
+                    )
+                )
+            )
+        )
+        if weak_topics
+        else "None"
+    )
+
+    st.markdown("### Today's Priorities")
+
+    priority1 = st.text_input(
+        "Priority 1",
+        placeholder="Most important task",
+        key="flow_priority1"
+    )
+
+    priority2 = st.text_input(
+        "Priority 2",
+        placeholder="Second priority",
+        key="flow_priority2"
+    )
+
+    priority3 = st.text_input(
+        "Priority 3",
+        placeholder="Third priority",
+        key="flow_priority3"
+    )
+
+    hours_available = st.slider(
+        "Hours Available Today",
+        1,
+        10,
+        6,
+        key="flow_hours"
+    )
+
+    if st.button(
+        "🧠 Generate AI Plan",
+        use_container_width=True,
+        key="generate_flow_plan"
+    ):
+
+        if priority1.strip() == "":
+
+            st.warning(
+                "Priority 1 is required."
+            )
+
+        else:
+
+            brain["last_activity"] = "Generated Daily Plan"
+
+            mission_text = (
+                mission["title"]
+                if mission
+                else "None"
+            )
+
+            recommended = (
+                brain.get("recommended_topic")
+                or "None"
+            )
+
+            current_focus = (
+                brain.get("current_focus")
+                or "None"
+            )
+
+            yesterday = ""
+
+            if st.session_state.db["day_logs"]:
+
+                yesterday = st.session_state.db["day_logs"][-1]["review"]
+
+            else:
+
+                yesterday = "No previous review."
+
+            planner_prompt = f"""
+You are NexusAI.
+
+Generate today's study plan.
+
+MISSION:
+{mission_text}
+
+CURRENT FOCUS:
+{current_focus}
+
+RECOMMENDED TOPIC:
+{recommended}
+
+WEAK TOPICS:
+{weak_context}
+
+AVAILABLE HOURS:
+{hours_available}
+
+USER PRIORITIES:
+
+1.
+{priority1}
+
+2.
+{priority2 or "None"}
+
+3.
+{priority3 or "None"}
+
+YESTERDAY'S REVIEW:
+{yesterday}
+
+Requirements:
+
+- Produce an hour-by-hour study schedule.
+
+- Include focused work blocks.
+
+- Include breaks.
+
+- Include revision if weak topics exist.
+
+- Prioritize today's mission.
+
+- Finish with:
+
+MOST IMPORTANT TASK TODAY:
+"""
+
+            with st.spinner(
+                "Generating your study plan..."
+            ):
+
+                response = client.chat.completions.create(
+
+                    model="llama-3.1-8b-instant",
+
+                    messages=[
+
+                        {
+                            "role":"system",
+                            "content":"You are an elite study planner."
+                        },
+
+                        {
+                            "role":"user",
+                            "content":planner_prompt
+                        }
+
+                    ]
+
+                )
+
+            st.session_state.flow_plan = (
+                response
+                .choices[0]
+                .message
+                .content
+            )
 
     if st.session_state.flow_plan:
-        st.markdown("### Your Plan")
-        st.markdown(st.session_state.flow_plan)
 
-        st.markdown("---")
-        st.markdown("### ⏰ 7PM Check-in")
-        checkin_report = st.text_area("What actually happened since 3PM?", placeholder="e.g. Completed priority 1, got distracted for 1 hour", height=100, key="checkin")
+        st.markdown("### 📅 Today's Plan")
 
-        if st.button("Replan 7PM-11PM", key="replan"):
-            if len(checkin_report.strip()) < 10: st.warning("Report what actually happened before replanning.")
+        plan_card = st.container(border=True)
+
+        with plan_card:
+
+            st.markdown(
+                st.session_state.flow_plan
+            )
+
+        st.success(
+            "Plan ready. Begin your first focus session."
+        )
+
+    st.write("")
+    # ==========================================================
+    # AI CHECK-IN
+    # ==========================================================
+
+    st.markdown("## 🌇 Mid-Day Check-in")
+
+    checkin_card = st.container(border=True)
+
+    with checkin_card:
+
+        st.caption(
+            "Reflect honestly before NexusAI replans the rest of your day."
+        )
+
+        checkin_report = st.text_area(
+
+            "What happened since your first study session?",
+
+            placeholder="Example: Finished Priority 1, got stuck on Sliding Window for 45 minutes.",
+
+            height=150,
+
+            key="flow_checkin"
+
+        )
+
+        if st.button(
+
+            "🔄 Replan Remaining Day",
+
+            use_container_width=True,
+
+            key="flow_replan_btn"
+
+        ):
+
+            if len(checkin_report.strip()) < 10:
+
+                st.warning(
+                    "Describe your progress before requesting a new plan."
+                )
+
             else:
-                with st.spinner("Replanning..."):
-                    replan_prompt = f"Original plan: {st.session_state.flow_plan}\nWhat happened since 3PM: {checkin_report}\nIt is 7PM. 4 hours remain.\nGenerate revised plan for 7PM-11PM only.\nProtect the most critical task above everything else."
-                    replan_response = client.chat.completions.create(
+
+                brain["last_activity"] = "Requested Mid-Day Replan"
+
+                mission_text = (
+                    mission["title"]
+                    if mission
+                    else "None"
+                )
+
+                focus = (
+                    brain.get("current_focus")
+                    or "None"
+                )
+
+                recommended = (
+                    brain.get("recommended_topic")
+                    or "None"
+                )
+
+                replan_prompt = f"""
+You are NexusAI.
+
+The student already followed part of today's study plan.
+
+ORIGINAL PLAN
+
+{st.session_state.flow_plan}
+
+MISSION
+
+{mission_text}
+
+CURRENT FOCUS
+
+{focus}
+
+RECOMMENDED TOPIC
+
+{recommended}
+
+CHECK-IN REPORT
+
+{checkin_report}
+
+Generate ONLY the remaining schedule.
+
+Requirements:
+
+• Protect today's mission.
+
+• Continue unfinished priorities.
+
+• If the student is behind,
+compress lower-priority work.
+
+• If the student is ahead,
+increase revision.
+
+• Include realistic breaks.
+
+Finish with:
+
+NEXT MOST IMPORTANT ACTION:
+"""
+
+                with st.spinner(
+                    "Replanning..."
+                ):
+
+                    response = client.chat.completions.create(
+
                         model="llama-3.1-8b-instant",
+
                         messages=[
-                            {"role": "system", "content": "You are a strict replanner. Protect critical tasks."},
-                            {"role": "user", "content": replan_prompt}
+
+                            {
+                                "role":"system",
+                                "content":"You are an expert productivity coach."
+                            },
+
+                            {
+                                "role":"user",
+                                "content":replan_prompt
+                            }
+
                         ]
+
                     )
-                    st.markdown("### Revised Plan (7PM-11PM)")
-                    st.markdown(replan_response.choices[0].message.content)
 
-        st.markdown("---")
-        st.markdown("### 🌙 11PM End of Day")
-        eod_report = st.text_area("What did you complete today?", placeholder="e.g. Priority 1 done, Priority 2 half done", height=100, key="eod")
+                replanned_schedule = (
+                    response
+                    .choices[0]
+                    .message
+                    .content
+                )
 
-        if st.button("Log Day", key="log_day"):
-            if len(eod_report.strip()) < 10: st.warning("Report what you completed before logging.")
+                st.markdown("### 🔁 Revised Schedule")
+
+                replanner_card = st.container(border=True)
+
+                with replanner_card:
+
+                    st.markdown(
+                        replanned_schedule
+                    )
+
+                brain["last_activity"] = "Received Revised Plan"
+
+                st.success(
+                    "Remaining schedule optimized."
+                )
+
+    st.write("")
+    # ==========================================================
+    # END OF DAY REVIEW
+    # ==========================================================
+
+    st.markdown("## 🌙 End of Day Review")
+
+    review_card = st.container(border=True)
+
+    with review_card:
+
+        completed_work = st.text_area(
+
+            "What did you complete today?",
+
+            placeholder="Example: Finished Prefix Sum revision, solved 3 Sliding Window problems, completed today's Scaler lecture.",
+
+            height=150,
+
+            key="flow_completed_today"
+
+        )
+
+        if st.button(
+
+            "📝 Generate Daily Review",
+
+            use_container_width=True,
+
+            key="flow_generate_review"
+
+        ):
+
+            if len(completed_work.strip()) < 10:
+
+                st.warning(
+                    "Describe today's work before generating a review."
+                )
+
             else:
-                with st.spinner("Logging your day..."):
-                    eod_prompt = f"Today's plan: {st.session_state.flow_plan}\nWhat was completed: {eod_report}\nGive:\n1. COMPLETION RATE: % of planned work done\n2. CARRY FORWARD: Uncompleted tasks for tomorrow\n3. TOMORROW'S FOCUS: Single most important thing\n4. HONEST ASSESSMENT: One sentence, no sugarcoating"
-                    eod_response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
-                        messages=[
-                            {"role": "system", "content": "You are a strict daily reviewer. Honest assessment only."},
-                            {"role": "user", "content": eod_prompt}
-                        ]
-                    )
-                    review = eod_response.choices[0].message.content
-                    st.markdown("### Day Review")
-                    st.markdown(review)
 
-                    st.session_state.db["day_logs"].append({"date": today, "completed": eod_report, "review": review})
-                    save_data(st.session_state.db)
-                    st.success("✅ Day logged. See you tomorrow.")
+                brain["last_activity"] = "Generated End-of-Day Review"
+
+                mission_text = (
+                    mission["title"]
+                    if mission
+                    else "None"
+                )
+
+                review_prompt = f"""
+You are NexusAI.
+
+Today's Mission
+
+{mission_text}
+
+Today's Plan
+
+{st.session_state.flow_plan}
+
+Completed Work
+
+{completed_work}
+
+Generate:
+
+## Completion Rate
+
+## Wins
+
+## Missed Work
+
+## Carry Forward
+
+## Tomorrow's Highest Priority
+
+## Honest Assessment
+
+Keep the feedback constructive but realistic.
+"""
+
+                with st.spinner(
+                    "Reviewing your day..."
+                ):
+
+                    response = client.chat.completions.create(
+
+                        model="llama-3.1-8b-instant",
+
+                        messages=[
+
+                            {
+                                "role":"system",
+                                "content":"You are a strict productivity coach."
+                            },
+
+                            {
+                                "role":"user",
+                                "content":review_prompt
+                            }
+
+                        ]
+
+                    )
+
+                daily_review = (
+                    response
+                    .choices[0]
+                    .message
+                    .content
+                )
+
+                st.markdown("### 📋 Daily Review")
+
+                review_output = st.container(border=True)
+
+                with review_output:
+
+                    st.markdown(
+                        daily_review
+                    )
+
+                st.session_state.db["day_logs"].append({
+
+                    "date": today,
+
+                    "completed": completed_work,
+
+                    "review": daily_review
+
+                })
+
+                save_data(
+                    st.session_state.db
+                )
+
+                st.success(
+                    "Day successfully logged."
+                )
+
+    st.write("")
+
+    # ==========================================================
+    # TODAY'S PRODUCTIVITY
+    # ==========================================================
+
+    st.markdown("## 📊 Today's Productivity")
+
+    analytics = st.container(border=True)
+
+    with analytics:
+
+        total_focus = 0
+
+        if st.session_state.get("focus_start"):
+
+            if st.session_state.get("focus_running"):
+
+                total_focus = int(
+
+                    (
+
+                        datetime.now()
+
+                        -
+
+                        st.session_state.focus_start
+
+                    ).total_seconds()
+
+                    /
+
+                    60
+
+                )
+
+        mission_progress = 0
+
+        if mission:
+
+            mission_progress = mission.get(
+                "progress",
+                0
+            )
+
+        col1,col2,col3 = st.columns(3)
+
+        with col1:
+
+            st.metric(
+
+                "Focus Minutes",
+
+                total_focus
+
+            )
+
+        with col2:
+
+            st.metric(
+
+                "Mission Progress",
+
+                f"{mission_progress}%"
+
+            )
+
+        with col3:
+
+            st.metric(
+
+                "Study Days",
+
+                len(
+                    st.session_state.db["day_logs"]
+                )
+
+            )
+
+    st.write("")
+    # ==========================================================
+    # AI BRAIN SYNCHRONIZATION
+    # ==========================================================
+
+    brain = st.session_state.brain
+
+    if mission:
+
+        if mission["status"] == MISSION_ACTIVE:
+
+            brain["current_focus"] = mission["title"]
+
+        elif mission["status"] == MISSION_COMPLETED":
+
+            brain["current_focus"] = None
+
+    update_recommended_topic()
+
+    # ==========================================================
+    # MISSION STATUS
+    # ==========================================================
+
+    if mission:
+
+        if mission["status"] == MISSION_COMPLETED:
+
+            st.success("🏆 Mission Completed")
+
+            st.balloons()
+
+            if st.button(
+                "🎯 Generate Next Mission",
+                use_container_width=True,
+                key="generate_next_mission_btn"
+            ):
+
+                new_mission = generate_daily_mission()
+
+                if new_mission:
+
+                    st.session_state.db["missions"].append(
+                        new_mission
+                    )
+
+                    st.session_state.db["current_mission"] = (
+                        new_mission
+                    )
+
+                    save_data(
+                        st.session_state.db
+                    )
+
+                    st.success(
+                        "New mission generated."
+                    )
+
+                    st.rerun()
+
+    # ==========================================================
+    # AUTO SAVE
+    # ==========================================================
+
+    save_data(
+        st.session_state.db
+    )
+
+    # ==========================================================
+    # FLOWSTATE FOOTER
+    # ==========================================================
+
+    st.divider()
+
+    st.caption(
+        "FlowState synchronizes your mission, AI Brain, study plans and daily progress automatically."
+    )
 
 elif st.session_state.current_page == "🎤 Mock Interview":
     st.session_state.brain["current_module"] = "Mock Interview"
