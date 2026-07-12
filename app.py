@@ -655,6 +655,15 @@ Be strict. Do not give 2 unless genuinely correct."""
                         "evaluation": evaluation
                     })
                     save_data(st.session_state.db)
+                    update_recommended_topic()
+
+                    if score == 2:
+
+                        st.session_state.brain["current_focus"] = None
+
+                    else:
+
+                        st.session_state.brain["current_focus"] = st.session_state.current_topic
 
                     if score <= 1:
                         st.error(f"⚠️ {st.session_state.current_topic} flagged as weak. Will resurface in 7 days.")
