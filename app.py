@@ -777,6 +777,24 @@ else:
 
 st.info(recommendation)
 
+if mission and mission["status"] == MISSION_PENDING:
+
+    if st.button(
+        "🚀 Start Current Mission",
+        key="hero_start_mission",
+        use_container_width=True
+    ):
+
+        mission["status"] = MISSION_ACTIVE
+
+        mission["started_at"] = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+        save_data(st.session_state.db)
+
+        st.rerun()
+
 def section_header(icon, title, subtitle, accent):
     st.markdown(f"""
     <div style="
