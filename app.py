@@ -493,70 +493,219 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 # ==================== TAB 1 ====================
+
 with tab1:
+
     st.session_state.brain["current_module"] = "Study Chat"
-    section_header("💬", "Study Chat", "Ask anything about your Scaler journey. NexusAI remembers your learning context.", "#385C7A")
+
+    section_header(
+        "💬",
+        "Study Chat",
+        "Ask anything about your Scaler journey. NexusAI remembers your learning context.",
+        "#385C7A"
+    )
+
+    brain = st.session_state.brain
+
+    # ================= CHAT HISTORY =================
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    user_input = st.chat_input("Ask anything...")
+    # ================= SMART PLACEHOLDER =================
+
+    if brain.get("current_focus"):
+
+        placeholder = (
+            f"Ask anything about {brain['current_focus']}..."
+        )
+
+    elif brain.get("recommended_topic"):
+
+        placeholder = (
+            f"Need help with {brain['recommended_topic']}?"
+        )
+
+    elif mission and mission["status"] == MISSION_ACTIVE:
+
+        placeholder = (
+            f"Working on: {mission['title']}"
+        )
+
+    else:
+
+        placeholder = (
+            "Ask anything about your Software Engineering journey..."
+        )
+
+    user_input = st.chat_input(placeholder)
+
+    # ================= USER MESSAGE =================
 
     if user_input:
-        st.session_state.brain["last_activity"] = "Asked a study question"
-        st.session_state.messages.append({"role": "user", "content": user_input})
+
+        brain["last_activity"] = "Asked Study Chat question"
+
+        st.session_state.messages.append(
+            {
+                "role": "user",
+                "content": user_input
+            }
+        )
+
         with st.chat_message("user"):
             st.write(user_input)
 
-        brain = st.session_state.brain
+        # ================= AI CONTEXT =================
+
         brain_context = f"""
 CURRENT AI STATE
+
 Current Focus: {brain.get("current_focus")}
+
 Recommended Topic: {brain.get("recommended_topic")}
+
 Current Module: {brain.get("current_module")}
+
 Last Activity: {brain.get("last_activity")}
+
+Current Mission: {mission["title"] if mission else "None"}
+
+Mission Status: {mission["status"] if mission else "None"}
 """
-        system_context = brain_context + """You are NexusAI, a specialized software engineering study assistant.
-STUDENT PROFILE:
-- Name: Shivang
-- Program: Scaler Academy Software Development Program
-- Current module: Module 5 (AI & Agents)
-- Completed: Java basics, intermediate DSA (arrays, prefix sum, carry forward, 
-  contribution technique, sliding window, bit manipulation, 2D matrices, strings)
-- Background: Career switcher, non-CS degree, learning from scratch
-- Target: 18 LPA software development role
-- Known weak areas: sliding window, contribution technique (not yet cold-solved)
-TEACHING RULES:
-1. Never give the answer immediately. Ask what the student already knows first.
-2. Use first principles. Explain WHY before HOW.
-3. When explaining algorithms: give intuition first, then example, then code.
-4. When the student is wrong: identify the exact error precisely.
-5. Use execution traces and concrete examples always.
-6. After every explanation, ask one question to verify understanding.
-7. If asked for code directly: give pseudocode first, real code second.
-8. For DSA problems: brute force first, then optimize.
-9. Never sugarcoat. If understanding is shallow, say so directly.
-RESPONSE FORMAT:
-- Concise and focused — no padding
-- Bold key terms on first use
-- End complex explanations with a verification question
-SCOPE: Only answer questions about software engineering, DSA, Java, Python, 
-system design, Scaler curriculum, career strategy, and AI/ML from Module 5.
-Redirect anything outside this scope."""
+
+        system_context = brain_context + """
+
+You are NexusAI.
+
+You are an AI Software Engineering Mentor whose goal is to help the learner become interview-ready for an 18+ LPA Software Engineering role.
+
+==========================
+STUDENT PROFILE
+==========================
+
+Name: Shivang
+
+Program:
+Scaler Academy Software Development Program
+
+Background:
+Career switcher
+Non-CS degree
+Learning Software Engineering from scratch
+
+Target:
+18+ LPA Software Engineering Job
+
+Current Curriculum:
+Module 5 (AI & Agents)
+
+Completed Topics:
+- Java Basics
+- Arrays
+- Prefix Sum
+- Carry Forward
+- Sliding Window
+- Contribution Technique
+- Bit Manipulation
+- 2D Matrices
+- Strings
+
+==========================
+TEACHING RULES
+==========================
+
+1. Never immediately give the final solution.
+
+2. First understand what the learner already knows.
+
+3. Explain WHY before HOW.
+
+4. Use intuition before algorithms.
+
+5. Give brute force before optimization.
+
+6. Use examples with actual values.
+
+7. Identify the exact mistake instead of saying "wrong."
+
+8. Ask one verification question after complex explanations.
+
+9. Be honest.
+Do not sugarcoat weak understanding.
+
+10. Teach like a senior mentor, not a chatbot.
+
+==========================
+RESPONSE STYLE
+==========================
+
+- Short
+- Clear
+- Practical
+- Structured
+- No unnecessary padding
+
+Use headings where appropriate.
+
+Bold important concepts.
+
+==========================
+SCOPE
+==========================
+
+Only answer questions related to
+
+- Software Engineering
+- DSA
+- Java
+- Python
+- AI
+- System Design
+- Scaler Academy
+- Interview Preparation
+- Career Strategy
+
+If the learner asks something unrelated,
+politely redirect them.
+"""
+
+        # ================= AI RESPONSE =================
 
         with st.chat_message("assistant"):
+
             with st.spinner("Thinking..."):
+
                 response = client.chat.completions.create(
+
                     model="llama-3.1-8b-instant",
+
                     messages=[
-                        {"role": "system", "content": system_context},
-                        {"role": "user", "content": user_input}
+
+                        {
+                            "role": "system",
+                            "content": system_context
+                        },
+
+                        {
+                            "role": "user",
+                            "content": user_input
+                        }
+
                     ]
                 )
+
                 reply = response.choices[0].message.content
+
                 st.write(reply)
-                st.session_state.messages.append({"role": "assistant", "content": reply})
+
+                st.session_state.messages.append(
+                    {
+                        "role": "assistant",
+                        "content": reply
+                    }
+                )
 
 # ==================== TAB 2 ====================
 with tab2:
