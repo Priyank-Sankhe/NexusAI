@@ -709,119 +709,378 @@ politely redirect them.
 
 # ==================== TAB 2 ====================
 with tab2:
-    st.session_state.brain["current_module"] = "GapFinder"
-    section_header("🎯", "GapFinder", "Identify weak concepts and automatically generate targeted practice.", "#7A5636")
-    st.caption("Get a problem, solve it, get evaluated. Weakness tracked automatically.")
 
-    weak_topics = get_weak_topics(st.session_state.db["gap_log"])
-    if weak_topics:
-        st.warning(f"⚠️ Topics due for retest: {', '.join(set([w['topic'] for w in weak_topics]))}")
+    brain = st.session_state.brain
+    brain["current_module"] = "GapFinder"
 
-    topics = ["Prefix Sum", "Sliding Window", "Contribution Technique",
-              "Bit Manipulation", "2D Matrices", "Strings"]
-
-    recommended = st.session_state.brain.get("recommended_topic")
-
-    default_index = 0
-
-    if recommended in topics:
-        default_index = topics.index(recommended)
-
-    selected_topic = st.selectbox(
-        "Select a topic:",
-        topics,
-        index=default_index,
-        key="gap_topic"
+    section_header(
+        "🎯",
+        "GapFinder",
+        "Identify weak concepts and automatically generate targeted practice.",
+        "#7A5636"
     )
 
-    if st.button("Generate Problem", key="gen_problem"):
-        st.session_state.brain["current_focus"] = selected_topic
-        st.session_state.brain["last_activity"] = "Generated a practice problem"
-        with st.spinner("Generating problem..."):
-            problem_prompt = f"""Generate a DSA problem specifically and only on: {selected_topic}.
-Format exactly like this:
-PROBLEM: [clear problem statement with example input and output]
-DIFFICULTY: [Easy/Medium]
-HINT: [one line hint, not the solution]"""
+    # AI RECOMMENDATION
+    if brain.get("recommended_topic"):
+        st.info(f"🧠 AI Recommendation: Focus on **{brain['recommended_topic']}** next.")
+    else:
+        st.success("🎉 No weak topics detected. Continue strengthening your foundations.")
 
+    # LEARNING STATUS
+    weak_topics = get_weak_topics(st.session_state.db["gap_log"])
+    if weak_topics:
+        due_topics = sorted(list(set([t["topic"] for t in weak_topics])))
+        st.warning("⚠️ Topics due for revision: " + ", ".join(due_topics))
+
+    # TOPIC SELECTION
+    topics = [
+        "Prefix Sum",
+        "Sliding Window",
+        "Contribution Technique",
+        "Bit Manipulation",
+        "2D Matrices",
+        "Strings"
+    ]
+
+    recommended = brain.get("recommended_topic")
+    default_index = topics.index(recommended) if recommended in topics else 0
+
+    left, right = st.columns([3, 1])
+    with left:
+        selected_topic = st.selectbox(
+            "Choose Practice Topic",
+            topics,
+            index=default_index,
+            key="gap_topic"
+        )
+    with right:
+        difficulty = st.selectbox(
+            "Difficulty",
+            ["Adaptive", "Easy", "Medium", "Hard"],
+            key="gap_difficulty"
+        )
+
+    # TOPIC STATUS CARD
+    history = [
+        x for x in st.session_state.db["gap_log"]
+        if x.get("type") == "gap_entry" and x["topic"] == selected_topic
+    ]
+    solved = len(history)
+    avg_score = sum(x["score"] for x in history) / solved if solved else 0
+
+    if solved == 0:
+        mastery = "🆕 New Topic"
+    elif avg_score >= 1.8:
+        mastery = "🟢 Mastered"
+    elif avg_score >= 1.2:
+        mastery = "🟡 Developing"
+    else:
+        mastery = "🔴 Needs Practice"
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Mastery", mastery)
+    with col2:
+        st.metric("Attempts", solved)
+    with col3:
+        st.metric("Average Score", f"{avg_score:.1f}/2")
+
+    st.divider()
+
+    # GENERATE PROBLEM
+    if st.button("🚀 Generate Practice Problem", use_container_width=True, key="gen_problem"):
+        brain["current_focus"] = selected_topic
+        brain["last_activity"] = "Generated GapFinder problem"
+
+        with st.spinner("Generating personalized problem..."):
+            prompt = f"""
+You are an expert DSA mentor.
+
+Generate ONE ORIGINAL coding interview problem.
+
+Topic:
+{selected_topic}
+
+Difficulty:
+{difficulty}
+
+Requirements:
+
+1. Focus ONLY on this topic.
+
+2. Practical interview-style problem.
+
+3. Include:
+
+PROBLEM
+
+INPUT
+
+OUTPUT
+
+EXAMPLE
+
+CONSTRAINTS
+
+HINT
+
+Do NOT provide the solution.
+"""
             response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
-                    {"role": "system", "content": f"You are a DSA problem generator. Only generate problems about {selected_topic}."},
-                    {"role": "user", "content": problem_prompt}
+                    {"role": "system", "content": "You generate high-quality DSA interview questions."},
+                    {"role": "user", "content": prompt}
                 ]
             )
             st.session_state.current_problem = response.choices[0].message.content
             st.session_state.current_topic = selected_topic
+            st.session_state.current_difficulty = difficulty
 
+    # PROBLEM DISPLAY
     if "current_problem" in st.session_state:
-        st.markdown("### Problem")
-        st.markdown(st.session_state.current_problem)
 
+        st.divider()
+        st.subheader("📝 Practice Problem")
+
+        problem_card = st.container(border=True)
+        with problem_card:
+            st.markdown(st.session_state.current_problem)
+
+        st.write("")
+
+        # SESSION INFO
+        info1, info2, info3 = st.columns(3)
+        with info1:
+            st.metric("Topic", st.session_state.current_topic)
+        with info2:
+            st.metric("Difficulty", st.session_state.current_difficulty)
+        with info3:
+            attempt_history = [
+                x for x in st.session_state.db["gap_log"]
+                if x.get("type") == "gap_entry"
+                and x["topic"] == st.session_state.current_topic
+            ]
+            st.metric("Previous Attempts", len(attempt_history))
+
+        st.divider()
+
+        # HINT SYSTEM
+        if "hint_level" not in st.session_state:
+            st.session_state.hint_level = 0
+
+        st.markdown("### 💡 Need Help?")
+        h1, h2, h3 = st.columns(3)
+        with h1:
+            if st.button("Hint 1", use_container_width=True, key="hint1"):
+                st.session_state.hint_level = max(st.session_state.hint_level, 1)
+        with h2:
+            if st.button("Hint 2", use_container_width=True, key="hint2"):
+                st.session_state.hint_level = max(st.session_state.hint_level, 2)
+        with h3:
+            if st.button("I'm Stuck", use_container_width=True, key="stuck"):
+                st.session_state.hint_level = 3
+
+        if st.session_state.hint_level > 0:
+            with st.spinner("Generating hint..."):
+                hint_prompt = f"""
+Problem:
+{st.session_state.current_problem}
+
+Topic:
+{st.session_state.current_topic}
+
+Hint Level:
+{st.session_state.hint_level}
+
+Rules:
+Level 1: Give only a tiny nudge.
+Level 2: Explain the algorithmic direction.
+Level 3: Explain the complete intuition but DO NOT provide code.
+"""
+                hint_response = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[
+                        {"role": "system", "content": "You are a DSA mentor."},
+                        {"role": "user", "content": hint_prompt}
+                    ]
+                )
+                st.info(hint_response.choices[0].message.content)
+
+        st.divider()
+
+        # TIMER
+        st.subheader("⏱ Practice Timer")
+        timer1, timer2, timer3 = st.columns(3)
+        with timer1:
+            if st.button("▶ Start", key="gap_timer_start", use_container_width=True):
+                st.session_state.gap_timer_start = datetime.now()
+                st.session_state.gap_timer_running = True
+        with timer2:
+            if st.button("⏹ Stop", key="gap_timer_stop", use_container_width=True):
+                if st.session_state.get("gap_timer_running"):
+                    elapsed = (datetime.now() - st.session_state.gap_timer_start).seconds
+                    mins = elapsed // 60
+                    secs = elapsed % 60
+                    st.session_state.gap_elapsed = f"{mins}m {secs}s"
+                    st.session_state.gap_timer_running = False
+        with timer3:
+            if st.button("🔄 Reset", key="gap_timer_reset", use_container_width=True):
+                st.session_state.pop("gap_timer_start", None)
+                st.session_state.pop("gap_elapsed", None)
+                st.session_state.gap_timer_running = False
+
+        if st.session_state.get("gap_elapsed"):
+            st.success(f"Time Taken: {st.session_state.gap_elapsed}")
+
+        st.divider()
+
+        # SOLUTION
+        st.subheader("✍ Your Solution")
         user_solution = st.text_area(
-            "Write your approach — pseudocode, logic, or actual code:",
-            height=200,
+            "Explain your approach, pseudocode, or code.",
+            height=260,
+            placeholder="""1. Explain your intuition.
+2. Explain the algorithm.
+3. Mention Time Complexity.
+4. Mention Space Complexity.
+5. Finally write code if possible.""",
             key="solution_input"
         )
 
-        if st.button("Evaluate My Solution", key="eval_solution"):
+        st.write("")
+
+        # EVALUATION ENGINE
+        if st.button("✅ Evaluate My Solution", use_container_width=True, key="eval_solution"):
             if len(user_solution.strip()) < 10:
-                st.warning("Write an actual solution attempt before evaluating.")
+                st.warning("Write a genuine solution attempt before evaluation.")
             else:
-                with st.spinner("Evaluating..."):
-                    eval_prompt = f"""Problem: {st.session_state.current_problem}
+                with st.spinner("Evaluating your solution..."):
+                    evaluation_prompt = f"""
+You are a Senior Software Engineer interviewing a candidate for an 18-22 LPA Software Engineering role.
 
-Student's solution: {user_solution}
+TOPIC:
+{st.session_state.current_topic}
 
-Evaluate strictly:
-1. CORRECT: What did they get right?
-2. MISSING: What's wrong or missing?
-3. OPTIMAL SOLUTION: Show the correct approach
-4. SCORE: 0 (wrong), 1 (partial), 2 (correct) — number only
-5. VERDICT: "Move on" or "Review this topic"
+DIFFICULTY:
+{st.session_state.current_difficulty}
 
-Be strict. Do not give 2 unless genuinely correct."""
+PROBLEM:
+{st.session_state.current_problem}
 
+CANDIDATE SOLUTION:
+{user_solution}
+
+Evaluate using the following format exactly.
+
+## Communication
+(How well they explained the thought process)
+
+## Correctness
+(Is the solution logically correct?)
+
+## Algorithm
+(Is the chosen algorithm appropriate?)
+
+## Time Complexity
+
+## Space Complexity
+
+## Code Quality
+
+## Biggest Mistake
+
+## Better Approach
+
+## SCORE
+Return ONLY one number:
+0
+1
+or
+2
+
+## FINAL VERDICT
+One sentence only.
+
+Be strict.
+Do not award 2 unless the solution would pass a real interview.
+"""
                     eval_response = client.chat.completions.create(
                         model="llama-3.1-8b-instant",
                         messages=[
-                            {"role": "system", "content": "You are a strict DSA interviewer. Evaluate honestly."},
-                            {"role": "user", "content": eval_prompt}
+                            {"role": "system", "content": "You are a strict Senior Software Engineer conducting technical interviews."},
+                            {"role": "user", "content": evaluation_prompt}
                         ]
                     )
                     evaluation = eval_response.choices[0].message.content
-                    st.markdown("### Evaluation")
+
+                st.divider()
+                st.subheader("📋 Evaluation")
+                evaluation_card = st.container(border=True)
+                with evaluation_card:
                     st.markdown(evaluation)
 
-                    score = 1
-                    for line in evaluation.split("\n"):
-                        if "SCORE:" in line:
-                            if "0" in line: score = 0
-                            elif "2" in line: score = 2
-                            break
+                # SCORE EXTRACTION
+                score = 1
+                for line in evaluation.splitlines():
+                    line = line.strip().upper()
+                    if "## SCORE" in line:
+                        continue
+                    if line == "0":
+                        score = 0
+                        break
+                    if line == "1":
+                        score = 1
+                        break
+                    if line == "2":
+                        score = 2
+                        break
 
-                    st.session_state.db["gap_log"].append({
-                        "type": "gap_entry",
-                        "topic": st.session_state.current_topic,
-                        "date": datetime.now().strftime("%Y-%m-%d"),
-                        "score": score,
-                        "evaluation": evaluation
-                    })
-                    save_data(st.session_state.db)
-                    update_recommended_topic()
+                # DATABASE UPDATE
+                st.session_state.db["gap_log"].append({
+                    "type": "gap_entry",
+                    "topic": st.session_state.current_topic,
+                    "difficulty": st.session_state.current_difficulty,
+                    "date": datetime.now().strftime("%Y-%m-%d"),
+                    "score": score,
+                    "evaluation": evaluation
+                })
+                save_data(st.session_state.db)
 
+                # AI BRAIN UPDATE
+                brain = st.session_state.brain
+                brain["last_activity"] = "Completed GapFinder evaluation"
+                if score == 2:
+                    brain["current_focus"] = None
+                else:
+                    brain["current_focus"] = st.session_state.current_topic
+                update_recommended_topic()
+
+                # MISSION UPDATE
+                mission = st.session_state.db.get("current_mission")
+                if mission:
                     if score == 2:
+                        mission["progress"] = min(100, mission.get("progress", 0) + 25)
+                        if mission["progress"] >= 100:
+                            mission["progress"] = 100
+                            mission["status"] = MISSION_COMPLETED
+                            mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    save_data(st.session_state.db)
 
-                        st.session_state.brain["current_focus"] = None
+                # RESULT
+                st.divider()
+                if score == 2:
+                    st.success("✅ Excellent. Topic marked as solid.")
+                elif score == 1:
+                    st.warning("🟡 Partial understanding. Revisit this topic.")
+                else:
+                    st.error("🔴 Weak understanding detected. This topic has been added back to your learning queue.")
 
-                    else:
-
-                        st.session_state.brain["current_focus"] = st.session_state.current_topic
-
-                    if score <= 1:
-                        st.error(f"⚠️ {st.session_state.current_topic} flagged as weak. Will resurface in 7 days.")
-                    else:
-                        st.success(f"✅ {st.session_state.current_topic} marked solid.")
+                # NEXT ACTION
+                st.info(
+                    f"🎯 Recommended Next Focus: "
+                    f"{brain.get('recommended_topic') or 'Continue solving problems'}"
+                )
 
 # ==================== TAB 3 ====================
 with tab3:
