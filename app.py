@@ -575,6 +575,24 @@ if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
+if "brain" not in st.session_state:
+
+    st.session_state.brain = {
+
+        "current_focus": None,
+
+        "current_module": None,
+
+        "recommended_action": None,
+
+        "last_activity": None,
+
+        "learning_mode": "normal",
+
+        "streak": 0,
+
+        "energy": "unknown"
+    }
 
 # ================= CURRENT MISSION =================
 
