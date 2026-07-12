@@ -905,7 +905,7 @@ elif st.session_state.current_page == "⚡ FlowState":
     st.write("")
 
     st.markdown("## 📋 AI Daily Planner")
-        today = datetime.now().strftime("%Y-%m-%d")
+    today = datetime.now().strftime("%Y-%m-%d")
 
     weak_topics = get_weak_topics(
         st.session_state.db["gap_log"]
