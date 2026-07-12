@@ -949,7 +949,7 @@ with tab2:
     if st.button("Generate Problem", key="gen_problem"):
        st.session_state.brain["current_focus"] = selected_topic
        st.session_state.brain["last_activity"] = "Generated a practice problem"
-        with st.spinner("Generating problem..."):
+       with st.spinner("Generating problem..."):
             problem_prompt = f"""Generate a DSA problem specifically and only on: {selected_topic}.
 Format exactly like this:
 PROBLEM: [clear problem statement with example input and output]
