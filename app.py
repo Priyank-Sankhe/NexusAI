@@ -913,11 +913,11 @@ Level 3: Explain the complete intuition but DO NOT provide code.
         st.subheader("⏱ Practice Timer")
         timer1, timer2, timer3 = st.columns(3)
         with timer1:
-            if st.button("▶ Start", key="gap_timer_start", use_container_width=True):
+            if st.button("▶ Start", key="gap_timer_start_btn", use_container_width=True):
                 st.session_state.gap_timer_start = datetime.now()
                 st.session_state.gap_timer_running = True
         with timer2:
-            if st.button("⏹ Stop", key="gap_timer_stop", use_container_width=True):
+            if st.button("⏹ Stop", key="gap_timer_stop_btn", use_container_width=True):
                 if st.session_state.get("gap_timer_running"):
                     elapsed = (datetime.now() - st.session_state.gap_timer_start).seconds
                     mins = elapsed // 60
@@ -925,7 +925,7 @@ Level 3: Explain the complete intuition but DO NOT provide code.
                     st.session_state.gap_elapsed = f"{mins}m {secs}s"
                     st.session_state.gap_timer_running = False
         with timer3:
-            if st.button("🔄 Reset", key="gap_timer_reset", use_container_width=True):
+            if st.button("🔄 Reset", key="gap_timer_reset_btn", use_container_width=True):
                 st.session_state.pop("gap_timer_start", None)
                 st.session_state.pop("gap_elapsed", None)
                 st.session_state.gap_timer_running = False
