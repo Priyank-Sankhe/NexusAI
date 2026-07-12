@@ -560,7 +560,7 @@ def generate_daily_mission():
         reverse=True
     )[0]
 
-     return create_mission(
+    return create_mission(
     title=f"Revise {weakest['topic']}",
     reason=f"Last revised {weakest['days_since']} days ago",
     priority=100,
