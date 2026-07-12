@@ -567,7 +567,19 @@ with tab2:
     topics = ["Prefix Sum", "Sliding Window", "Contribution Technique",
               "Bit Manipulation", "2D Matrices", "Strings"]
 
-    selected_topic = st.selectbox("Select a topic:", topics, key="gap_topic")
+    recommended = st.session_state.brain.get("recommended_topic")
+
+    default_index = 0
+
+    if recommended in topics:
+        default_index = topics.index(recommended)
+
+    selected_topic = st.selectbox(
+        "Select a topic:",
+        topics,
+        index=default_index,
+        key="gap_topic"
+    )
 
     if st.button("Generate Problem", key="gen_problem"):
         st.session_state.brain["current_focus"] = selected_topic
