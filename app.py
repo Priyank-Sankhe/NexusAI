@@ -250,6 +250,51 @@ def section_header(icon, title, subtitle, accent):
     </div>
     """, unsafe_allow_html=True)
 
+# ==================== TIMER HELPERS ====================
+def start_timer(start_key, running_key, result_key=None):
+    st.session_state[start_key] = datetime.now()
+    st.session_state[running_key] = True
+    if result_key:
+        st.session_state[result_key] = None
+
+def stop_timer(start_key, running_key, result_key=None):
+    if st.session_state.get(running_key) and start_key in st.session_state:
+        elapsed = get_elapsed_time(st.session_state[start_key])
+        if result_key:
+            mins = int(elapsed) // 60
+            secs = int(elapsed) % 60
+            st.session_state[result_key] = f"{mins}m {secs}s"
+        st.session_state[running_key] = False
+
+def pause_timer(running_key):
+    if running_key in st.session_state:
+        st.session_state[running_key] = False
+
+def resume_timer(running_key):
+    if running_key in st.session_state:
+        st.session_state[running_key] = True
+
+def reset_timer(start_key, running_key, result_key=None):
+    st.session_state.pop(start_key, None)
+    if result_key:
+        st.session_state.pop(result_key, None)
+    st.session_state[running_key] = False
+
+def get_elapsed_time(start_val, in_minutes=False):
+    if not start_val:
+        return 0
+    if isinstance(start_val, str):
+        start_val = datetime.strptime(start_val, "%Y-%m-%d %H:%M:%S")
+    elapsed = (datetime.now() - start_val).total_seconds()
+    return int(elapsed / 60) if in_minutes else elapsed
+
+def get_remaining_time(elapsed_minutes, total_minutes):
+    return max(0, total_minutes - elapsed_minutes)
+
+def get_progress(elapsed, total):
+    if total <= 0: return 0
+    return min(100, int((elapsed / total) * 100))
+
 # ==================== RUNTIME FRAGMENTS ====================
 @st.fragment
 def gap_timer_component():
@@ -257,22 +302,13 @@ def gap_timer_component():
     col_gt1, col_gt2, col_gt3 = st.columns(3)
     with col_gt1:
         if st.button("▶️ Start Timer", key="start_gap_timer"):
-            st.session_state.gap_timer_start = datetime.now()
-            st.session_state.gap_timer_running = True
-            st.session_state.gap_timer_result = None
+            start_timer("gap_timer_start", "gap_timer_running", "gap_timer_result")
     with col_gt2:
         if st.button("⏹️ Stop Timer", key="stop_gap_timer"):
-            if st.session_state.get("gap_timer_running") and "gap_timer_start" in st.session_state:
-                elapsed = (datetime.now() - st.session_state.gap_timer_start).seconds
-                mins = elapsed // 60
-                secs = elapsed % 60
-                st.session_state.gap_timer_result = f"{mins}m {secs}s"
-                st.session_state.gap_timer_running = False
+            stop_timer("gap_timer_start", "gap_timer_running", "gap_timer_result")
     with col_gt3:
         if st.button("🔄 Reset Timer", key="reset_gap_timer"):
-            st.session_state.pop("gap_timer_start", None)
-            st.session_state.pop("gap_timer_result", None)
-            st.session_state.gap_timer_running = False
+            reset_timer("gap_timer_start", "gap_timer_running", "gap_timer_result")
 
     if st.session_state.get("gap_timer_result"):
         st.info(f"⏱️ Time taken to solve: {st.session_state.gap_timer_result}")
@@ -283,22 +319,13 @@ def mock_timer_component():
     col_t1, col_t2, col_t3 = st.columns(3)
     with col_t1:
         if st.button("▶️ Start", key="start_timer"):
-            st.session_state.timer_start = datetime.now()
-            st.session_state.timer_running = True
-            st.session_state.timer_result = None
+            start_timer("timer_start", "timer_running", "timer_result")
     with col_t2:
         if st.button("⏹️ Stop", key="stop_timer"):
-            if st.session_state.get("timer_running") and "timer_start" in st.session_state:
-                elapsed = (datetime.now() - st.session_state.timer_start).seconds
-                mins = elapsed // 60
-                secs = elapsed % 60
-                st.session_state.timer_result = f"{mins}m {secs}s"
-                st.session_state.timer_running = False
+            stop_timer("timer_start", "timer_running", "timer_result")
     with col_t3:
         if st.button("🔄 Reset", key="reset_timer"):
-            st.session_state.pop("timer_start", None)
-            st.session_state.pop("timer_result", None)
-            st.session_state.timer_running = False
+            reset_timer("timer_start", "timer_running", "timer_result")
 
     if st.session_state.get("timer_result"):
         mins_taken = int(st.session_state.timer_result.split("m")[0])
@@ -481,11 +508,9 @@ if st.session_state.current_page == "📊 Dashboard":
                 st.caption(mission["reason"])
 
                 if mission["status"] == MISSION_ACTIVE and mission["started_at"]:
-                    started = datetime.strptime(mission["started_at"], "%Y-%m-%d %H:%M:%S")
-                    elapsed_seconds = (datetime.now() - started).total_seconds()
+                    elapsed_seconds = get_elapsed_time(mission["started_at"])
                     total_seconds = mission["duration"] * 60
-                    progress = min(100, int((elapsed_seconds / total_seconds) * 100))
-                    mission["progress"] = progress
+                    mission["progress"] = get_progress(elapsed_seconds, total_seconds)
 
                 st.progress(mission["progress"] / 100)
                 st.caption(f"Progress: {mission['progress']}%")
@@ -512,7 +537,7 @@ if st.session_state.current_page == "📊 Dashboard":
         else:
             st.info("No active mission yet. Solve problems in GapFinder to generate performance markers.")
 
-    # Analytical Logs (Moved inside Dashboard view where they belong)
+    # Analytical Logs
     st.markdown("---")
     st.markdown("### ⚠️ Tracked Gaps & Retest Windows")
     db = st.session_state.db
@@ -807,9 +832,7 @@ elif st.session_state.current_page == "⚡ FlowState":
 
             ):
 
-                st.session_state.focus_running = True
-
-                st.session_state.focus_start = datetime.now()
+                start_timer("focus_start", "focus_running")
 
                 brain["last_activity"] = "Started Focus Session"
 
@@ -829,7 +852,7 @@ elif st.session_state.current_page == "⚡ FlowState":
 
             ):
 
-                st.session_state.focus_running = False
+                pause_timer("focus_running")
 
                 brain["last_activity"] = "Paused Focus Session"
 
@@ -847,29 +870,7 @@ elif st.session_state.current_page == "⚡ FlowState":
 
             ):
 
-                if st.session_state.get("focus_start"):
-
-                    elapsed = int(
-
-                        (
-
-                            datetime.now()
-
-                            -
-
-                            st.session_state.focus_start
-
-                        ).total_seconds()
-
-                        /
-
-                        60
-
-                    )
-
-                else:
-
-                    elapsed = 0
+                elapsed = get_elapsed_time(st.session_state.get("focus_start"), in_minutes=True)
 
                 st.success(
 
@@ -903,7 +904,7 @@ elif st.session_state.current_page == "⚡ FlowState":
 
                 save_data(st.session_state.db)
 
-                st.session_state.focus_running = False
+                stop_timer("focus_start", "focus_running")
 
     st.write("")
 
@@ -1410,23 +1411,7 @@ Keep the feedback constructive but realistic.
 
             if st.session_state.get("focus_running"):
 
-                total_focus = int(
-
-                    (
-
-                        datetime.now()
-
-                        -
-
-                        st.session_state.focus_start
-
-                    ).total_seconds()
-
-                    /
-
-                    60
-
-                )
+                total_focus = get_elapsed_time(st.session_state.focus_start, in_minutes=True)
 
         mission_progress = 0
 
@@ -1901,9 +1886,7 @@ Do NOT provide any hints or solutions.
 
                 ):
 
-                    st.session_state.mock_running = True
-
-                    st.session_state.mock_start = datetime.now()
+                    start_timer("mock_start", "mock_running")
 
                     brain["last_activity"] = "Interview Started"
 
@@ -1923,7 +1906,7 @@ Do NOT provide any hints or solutions.
 
                 ):
 
-                    st.session_state.mock_running = False
+                    pause_timer("mock_running")
 
                     brain["last_activity"] = "Interview Paused"
 
@@ -1943,7 +1926,7 @@ Do NOT provide any hints or solutions.
 
                 ):
 
-                    st.session_state.mock_running = False
+                    stop_timer("mock_start", "mock_running")
 
                     brain["last_activity"] = "Interview Finished"
 
@@ -1953,51 +1936,11 @@ Do NOT provide any hints or solutions.
 
         if st.session_state.get("mock_running"):
 
-            elapsed = int(
+            elapsed = get_elapsed_time(st.session_state.mock_start, in_minutes=True)
 
-                (
+            remaining = get_remaining_time(elapsed, interview_time)
 
-                    datetime.now()
-
-                    -
-
-                    st.session_state.mock_start
-
-                ).total_seconds()
-
-                /
-
-                60
-
-            )
-
-            remaining = max(
-
-                0,
-
-                interview_time - elapsed
-
-            )
-
-            progress = min(
-
-                100,
-
-                int(
-
-                    elapsed
-
-                    /
-
-                    interview_time
-
-                    *
-
-                    100
-
-                )
-
-            )
+            progress = get_progress(elapsed, interview_time)
 
             st.progress(
 
