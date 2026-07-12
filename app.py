@@ -1821,13 +1821,6 @@ Do NOT provide any hints or solutions.
         )
 
         
-
-        st.session_state.mock_company = company
-
-        st.session_state.mock_role = role
-
-        st.session_state.mock_difficulty = difficulty
-
         st.success(
 
             "Interview generated."
