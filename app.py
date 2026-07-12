@@ -307,29 +307,32 @@ def mock_timer_component():
             st.warning("Over 20 minutes — flag this topic for extra practice.")
 
 # ==================== SESSION STATE ====================
-if "db" not in st.session_state:
-    st.session_state.db = load_data()
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-if "flow_plan" not in st.session_state:
-    st.session_state.flow_plan = None
-if "timer_running" not in st.session_state:
-    st.session_state.timer_running = False
-if "gap_timer_running" not in st.session_state:
-    st.session_state.gap_timer_running = False
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "📊 Dashboard"
-if "brain" not in st.session_state:
-    st.session_state.brain = {
-        "current_focus": None,
-        "current_module": None,
-        "recommended_action": None,
-        "recommended_topic": None,
-        "last_activity": None,
-        "learning_mode": "normal",
-        "streak": 0,
-        "energy": "unknown"
-    }
+def initialize_session():
+    if "db" not in st.session_state:
+        st.session_state.db = load_data()
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "flow_plan" not in st.session_state:
+        st.session_state.flow_plan = None
+    if "timer_running" not in st.session_state:
+        st.session_state.timer_running = False
+    if "gap_timer_running" not in st.session_state:
+        st.session_state.gap_timer_running = False
+    if "current_page" not in st.session_state:
+        st.session_state.current_page = "📊 Dashboard"
+    if "brain" not in st.session_state:
+        st.session_state.brain = {
+            "current_focus": None,
+            "current_module": None,
+            "recommended_action": None,
+            "recommended_topic": None,
+            "last_activity": None,
+            "learning_mode": "normal",
+            "streak": 0,
+            "energy": "unknown"
+        }
+
+initialize_session()
 
 # ==================== MISSION ENGINE ====================
 def update_recommended_topic():
