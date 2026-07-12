@@ -751,6 +751,31 @@ with c:
     )
 
 st.write("")
+# ================= AI RECOMMENDATION =================
+
+brain = st.session_state.brain
+
+recommendation = None
+
+if brain["current_focus"]:
+
+    recommendation = (
+        f"🎯 Continue working on **{brain['current_focus']}**."
+    )
+
+elif mission and mission["status"] == MISSION_PENDING:
+
+    recommendation = (
+        f"🚀 Start today's mission: **{mission['title']}**."
+    )
+
+else:
+
+    recommendation = (
+        "💡 Generate a new GapFinder problem to keep improving."
+    )
+
+st.info(recommendation)
 
 def section_header(icon, title, subtitle, accent):
     st.markdown(f"""
