@@ -1481,7 +1481,7 @@ Keep the feedback constructive but realistic.
 
             brain["current_focus"] = mission["title"]
 
-        elif mission["status"] == MISSION_COMPLETED":
+        elif mission["status"] == MISSION_COMPLETED:
 
             brain["current_focus"] = None
 
