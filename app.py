@@ -1,8 +1,14 @@
 import streamlit as st
 from groq import Groq
-from datetime import datetime
+from datetime import datetime, date
 from zoneinfo import ZoneInfo
 import requests
+import re
+import logging
+
+# Configure basic logging for background error tracking
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("NexusAI")
 
 st.set_page_config(page_title="NexusAI", layout="wide")
 st.markdown("""
@@ -153,15 +159,40 @@ section[data-testid="stSidebar"] .stButton>button:hover { background:#7D5436; }
 """, unsafe_allow_html=True)
 
 # ==================== CONFIG ====================
-client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-BIN_ID = st.secrets["JSONBIN_BIN_ID"]
-MASTER_KEY = st.secrets["JSONBIN_MASTER_KEY"]
-JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
+try:
+    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    BIN_ID = st.secrets["JSONBIN_BIN_ID"]
+    MASTER_KEY = st.secrets["JSONBIN_MASTER_KEY"]
+    JSONBIN_URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
+except KeyError as e:
+    st.error(f"⚠️ Missing secret configuration: {e}. Please check your `.streamlit/secrets.toml` file.")
+    st.stop()
 
 MISSION_PENDING = "pending"
 MISSION_ACTIVE = "active"
 MISSION_COMPLETED = "completed"
 MISSION_SKIPPED = "skipped"
+
+# ==================== HELPERS & SAFE PARSERS ====================
+def parse_date_safe(date_str, fmt="%Y-%m-%d"):
+    """Safely parse a date string, returning today's date if malformed."""
+    if not date_str:
+        return datetime.now().date()
+    try:
+        if len(date_str) > 10 and fmt == "%Y-%m-%d":
+            date_str = date_str[:10]
+        return datetime.strptime(str(date_str), fmt).date()
+    except (ValueError, TypeError):
+        return datetime.now().date()
+
+def parse_datetime_safe(dt_str, fmt="%Y-%m-%d %H:%M:%S"):
+    """Safely parse a datetime string, returning current datetime if malformed."""
+    if not dt_str:
+        return datetime.now()
+    try:
+        return datetime.strptime(str(dt_str), fmt)
+    except (ValueError, TypeError):
+        return datetime.now()
 
 # ==================== STORAGE ====================
 def load_data():
@@ -172,35 +203,56 @@ def load_data():
         "current_mission": None
     }
     try:
-        response = requests.get(JSONBIN_URL, headers={"X-Master-Key": MASTER_KEY})
-        data = response.json()["record"]
+        response = requests.get(JSONBIN_URL, headers={"X-Master-Key": MASTER_KEY}, timeout=10)
+        response.raise_for_status()
+        data = response.json().get("record", {})
         for key, value in default_db.items():
-            data.setdefault(key, value)
+            if not isinstance(data.get(key), type(value)):
+                data[key] = value
         return data
-    except:
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Failed to load cloud data: {e}")
+        # Return existing session state db if offline to prevent silent wipe
+        if "db" in st.session_state and isinstance(st.session_state.db, dict):
+            return st.session_state.db
+        return default_db
+    except Exception as e:
+        logger.error(f"Unexpected error loading data: {e}")
         return default_db
 
 def save_data(data):
     try:
-        requests.put(
+        response = requests.put(
             JSONBIN_URL,
             headers={"X-Master-Key": MASTER_KEY, "Content-Type": "application/json"},
-            json=data
+            json=data,
+            timeout=10
         )
-    except:
-        st.error("Failed to save data.")
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Cloud sync failed: {e}")
+        st.toast("⚠️ Cloud sync failed. Progress saved locally for this session.")
+    except Exception as e:
+        logger.error(f"Unexpected error saving data: {e}")
 
-# ==================== HELPERS ====================
 def get_weak_topics(gap_log):
     weak = []
     today = datetime.now().date()
+    if not isinstance(gap_log, list):
+        return weak
     for entry in gap_log:
+        if not isinstance(entry, dict):
+            continue
         if entry.get("type") == "gap_entry":
             score = entry.get("score", 2)
-            entry_date = datetime.strptime(entry["date"], "%Y-%m-%d").date()
+            entry_date = parse_date_safe(entry.get("date", ""))
             days_since = (today - entry_date).days
             if score <= 1 and days_since >= 7:
-                weak.append({"topic": entry["topic"], "days_since": days_since, "score": score})
+                weak.append({
+                    "topic": entry.get("topic", "General"),
+                    "days_since": days_since,
+                    "score": score
+                })
     return weak
 
 def create_mission(title, reason, priority, duration):
@@ -209,7 +261,7 @@ def create_mission(title, reason, priority, duration):
         "title": title,
         "reason": reason,
         "priority": priority,
-        "duration": duration,
+        "duration": max(1, int(duration)),
         "status": MISSION_PENDING,
         "progress": 0,
         "started_at": None,
@@ -218,7 +270,7 @@ def create_mission(title, reason, priority, duration):
     }
 
 def generate_daily_mission():
-    weak_topics = get_weak_topics(st.session_state.db["gap_log"])
+    weak_topics = get_weak_topics(st.session_state.db.get("gap_log", []))
     if not weak_topics:
         return create_mission(
             title="Complete Today's Scaler Session",
@@ -226,7 +278,7 @@ def generate_daily_mission():
             priority=100,
             duration=60
         )
-    weakest = sorted(weak_topics, key=lambda x: x["days_since"], reverse=True)[0]
+    weakest = sorted(weak_topics, key=lambda x: x.get("days_since", 0), reverse=True)[0]
     return create_mission(
         title=f"Revise {weakest['topic']}",
         reason=f"Last revised {weakest['days_since']} days ago — overdue for retest.",
@@ -250,15 +302,15 @@ def section_header(icon, title, subtitle, accent):
     """, unsafe_allow_html=True)
 
 # ==================== SESSION STATE ====================
-if "db" not in st.session_state:
+if "db" not in st.session_state or not isinstance(st.session_state.db, dict):
     st.session_state.db = load_data()
-if "messages" not in st.session_state:
+if "messages" not in st.session_state or not isinstance(st.session_state.messages, list):
     st.session_state.messages = []
 if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
-if "brain" not in st.session_state:
+if "brain" not in st.session_state or not isinstance(st.session_state.brain, dict):
     st.session_state.brain = {
         "current_focus": None,
         "current_module": None,
@@ -270,18 +322,23 @@ if "brain" not in st.session_state:
         "energy": "unknown"
     }
 
+# Ensure core DB lists exist
+for k in ["gap_log", "day_logs", "missions"]:
+    if k not in st.session_state.db or not isinstance(st.session_state.db[k], list):
+        st.session_state.db[k] = []
+
 # ==================== MISSION ENGINE ====================
 def update_recommended_topic():
-    weak_topics = get_weak_topics(st.session_state.db["gap_log"])
+    weak_topics = get_weak_topics(st.session_state.db.get("gap_log", []))
     if weak_topics:
-        weakest = sorted(weak_topics, key=lambda x: x["days_since"], reverse=True)[0]
+        weakest = sorted(weak_topics, key=lambda x: x.get("days_since", 0), reverse=True)[0]
         st.session_state.brain["recommended_topic"] = weakest["topic"]
     else:
         st.session_state.brain["recommended_topic"] = None
 
 update_recommended_topic()
 
-if st.session_state.db["current_mission"] is None:
+if st.session_state.db.get("current_mission") is None:
     mission = generate_daily_mission()
     if mission:
         st.session_state.db["missions"].append(mission)
@@ -291,13 +348,15 @@ if st.session_state.db["current_mission"] is None:
         save_data(st.session_state.db)
 
 mission = st.session_state.db.get("current_mission")
-if mission:
+if isinstance(mission, dict):
     mission.setdefault("progress", 0)
     mission.setdefault("duration", 25)
     mission.setdefault("status", MISSION_PENDING)
     mission.setdefault("reason", "")
     mission.setdefault("started_at", None)
     mission.setdefault("completed_at", None)
+else:
+    mission = None
 
 # ==================== SIDEBAR ====================
 with st.sidebar:
@@ -305,11 +364,11 @@ with st.sidebar:
     st.caption("AI Software Engineering Coach")
     st.divider()
 
-    gap_log_s = st.session_state.db["gap_log"]
-    day_logs_s = st.session_state.db["day_logs"]
+    gap_log_s = st.session_state.db.get("gap_log", [])
+    day_logs_s = st.session_state.db.get("day_logs", [])
 
-    st.metric("📚 Problems", len([e for e in gap_log_s if e.get("type") == "gap_entry"]))
-    st.metric("🎯 Weak Topics", len({e["topic"] for e in gap_log_s if e.get("type") == "gap_entry" and e.get("score", 0) <= 1}))
+    st.metric("📚 Problems", len([e for e in gap_log_s if isinstance(e, dict) and e.get("type") == "gap_entry"]))
+    st.metric("🎯 Weak Topics", len({e.get("topic") for e in gap_log_s if isinstance(e, dict) and e.get("type") == "gap_entry" and e.get("score", 0) <= 1 and e.get("topic")}))
     st.metric("📅 Study Days", len(day_logs_s))
 
     st.divider()
@@ -324,10 +383,14 @@ with st.sidebar:
     st.button("🎤 Mock Interview", use_container_width=True)
     st.button("📊 Dashboard", use_container_width=True)
     st.divider()
-    st.caption("NexusAI v1.0")
+    st.caption("NexusAI v1.0 (Hardened)")
 
 # ==================== HERO ====================
-now = datetime.now(ZoneInfo("Asia/Kolkata"))
+try:
+    now = datetime.now(ZoneInfo("Asia/Kolkata"))
+except Exception:
+    now = datetime.now()
+
 hour = now.hour
 today_name = now.strftime("%A")
 
@@ -338,10 +401,10 @@ elif hour < 17:
 else:
     greeting = "Good Evening 🌙"
 
-gap_log_h = st.session_state.db["gap_log"]
-day_logs_h = st.session_state.db["day_logs"]
-problem_count = len([e for e in gap_log_h if e.get("type") == "gap_entry"])
-weak_count = len({e["topic"] for e in gap_log_h if e.get("type") == "gap_entry" and e.get("score", 0) <= 1})
+gap_log_h = st.session_state.db.get("gap_log", [])
+day_logs_h = st.session_state.db.get("day_logs", [])
+problem_count = len([e for e in gap_log_h if isinstance(e, dict) and e.get("type") == "gap_entry"])
+weak_count = len({e.get("topic") for e in gap_log_h if isinstance(e, dict) and e.get("type") == "gap_entry" and e.get("score", 0) <= 1 and e.get("topic")})
 day_count = len(day_logs_h)
 
 hero = st.container(border=True)
@@ -368,83 +431,60 @@ with c:
 st.write("")
 
 # ==================== AI RECOMMENDATION ====================
-
 brain = st.session_state.brain
-
 recommended_topic = brain.get("recommended_topic")
 
 if recommended_topic:
-
     recommendation = (
         f"🧠 NexusAI Recommendation\n\n"
         f"Your highest priority right now is **{recommended_topic}**.\n"
         f"Strengthen this topic before moving on."
     )
-
-elif brain["current_focus"]:
-
+elif brain.get("current_focus"):
     recommendation = (
         f"🎯 Continue working on **{brain['current_focus']}**."
     )
-
-elif mission and mission["status"] == MISSION_PENDING:
-
+elif mission and mission.get("status") == MISSION_PENDING:
     recommendation = (
-        f"🚀 Start today's mission: **{mission['title']}**."
+        f"🚀 Start today's mission: **{mission.get('title', 'Daily Task')}**."
     )
-
 else:
-
     recommendation = (
         "💡 Generate a new GapFinder problem to keep improving."
     )
 
 st.info(recommendation)
 
-
 if recommended_topic:
-
     if st.button(
         f"🎯 Practice {recommended_topic}",
         key="practice_recommended_topic",
         use_container_width=True
     ):
-
         st.session_state.brain["current_focus"] = recommended_topic
-
-        st.success(
-            f"{recommended_topic} is now your active focus."
-        )
-
+        st.success(f"{recommended_topic} is now your active focus.")
         st.rerun()
-
-
-elif mission and mission["status"] == MISSION_PENDING:
-
+elif mission and mission.get("status") == MISSION_PENDING:
     if st.button(
         "🚀 Start Current Mission",
         key="hero_start_mission",
         use_container_width=True
     ):
-
         mission["status"] = MISSION_ACTIVE
-
         mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
         save_data(st.session_state.db)
-
         st.rerun()
 
 # ==================== CURRENT MISSION ====================
 st.markdown("## 🎯 Current Mission")
-mission = st.session_state.db["current_mission"]
+mission = st.session_state.db.get("current_mission")
 mission_card = st.container(border=True)
 
 with mission_card:
-    if mission:
+    if isinstance(mission, dict):
         left, right = st.columns([3, 1])
         with left:
-            st.subheader(mission["title"])
+            st.subheader(mission.get("title", "Untitled Mission"))
             priority = mission.get("priority", 100)
             if priority >= 90:
                 st.success("🔥 High Priority")
@@ -453,30 +493,31 @@ with mission_card:
             else:
                 st.info("📌 Low Priority")
 
-            st.caption(mission["reason"])
+            st.caption(mission.get("reason", ""))
 
-            if mission["status"] == MISSION_ACTIVE and mission["started_at"]:
-                started = datetime.strptime(mission["started_at"], "%Y-%m-%d %H:%M:%S")
+            if mission.get("status") == MISSION_ACTIVE and mission.get("started_at"):
+                started = parse_datetime_safe(mission["started_at"])
                 elapsed_seconds = (datetime.now() - started).total_seconds()
-                total_seconds = mission["duration"] * 60
-                progress = min(100, int((elapsed_seconds / total_seconds) * 100))
+                total_seconds = max(1, mission.get("duration", 25) * 60)
+                progress = min(100, max(0, int((elapsed_seconds / total_seconds) * 100)))
                 mission["progress"] = progress
 
-            st.progress(mission["progress"] / 100)
-            st.caption(f"Progress: {mission['progress']}%")
+            progress_val = min(1.0, max(0.0, mission.get("progress", 0) / 100.0))
+            st.progress(progress_val)
+            st.caption(f"Progress: {mission.get('progress', 0)}%")
 
         with right:
-            st.metric("Duration", f"{mission['duration']} min")
-            st.metric("Status", mission["status"].title())
+            st.metric("Duration", f"{mission.get('duration', 25)} min")
+            st.metric("Status", str(mission.get("status", "unknown")).title())
 
-            if mission["status"] == MISSION_PENDING:
+            if mission.get("status") == MISSION_PENDING:
                 if st.button("▶ Start Mission", key="start_mission_btn", use_container_width=True):
                     mission["status"] = MISSION_ACTIVE
                     mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     save_data(st.session_state.db)
                     st.rerun()
 
-            if mission["status"] == MISSION_ACTIVE:
+            if mission.get("status") == MISSION_ACTIVE:
                 if st.button("✅ Complete Mission", key="complete_mission_btn", use_container_width=True):
                     mission["status"] = MISSION_COMPLETED
                     mission["progress"] = 100
@@ -493,594 +534,186 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 ])
 
 # ==================== TAB 1 ====================
-
 with tab1:
-
     st.session_state.brain["current_module"] = "Study Chat"
-
-    section_header(
-        "💬",
-        "Study Chat",
-        "Ask anything about your Scaler journey. NexusAI remembers your learning context.",
-        "#385C7A"
-    )
-
-    brain = st.session_state.brain
-
-    # ================= CHAT HISTORY =================
+    section_header("💬", "Study Chat", "Ask anything about your Scaler journey. NexusAI remembers your learning context.", "#385C7A")
 
     for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.write(msg["content"])
+        if isinstance(msg, dict) and "role" in msg and "content" in msg:
+            with st.chat_message(msg["role"]):
+                st.write(msg["content"])
 
-    # ================= SMART PLACEHOLDER =================
-
-    if brain.get("current_focus"):
-
-        placeholder = (
-            f"Ask anything about {brain['current_focus']}..."
-        )
-
-    elif brain.get("recommended_topic"):
-
-        placeholder = (
-            f"Need help with {brain['recommended_topic']}?"
-        )
-
-    elif mission and mission["status"] == MISSION_ACTIVE:
-
-        placeholder = (
-            f"Working on: {mission['title']}"
-        )
-
-    else:
-
-        placeholder = (
-            "Ask anything about your Software Engineering journey..."
-        )
-
-    user_input = st.chat_input(placeholder)
-
-    # ================= USER MESSAGE =================
+    user_input = st.chat_input("Ask anything...")
 
     if user_input:
-
-        brain["last_activity"] = "Asked Study Chat question"
-
-        st.session_state.messages.append(
-            {
-                "role": "user",
-                "content": user_input
-            }
-        )
-
+        st.session_state.brain["last_activity"] = "Asked a study question"
+        st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.write(user_input)
 
-        # ================= AI CONTEXT =================
-
+        brain = st.session_state.brain
         brain_context = f"""
 CURRENT AI STATE
-
 Current Focus: {brain.get("current_focus")}
-
 Recommended Topic: {brain.get("recommended_topic")}
-
 Current Module: {brain.get("current_module")}
-
 Last Activity: {brain.get("last_activity")}
-
-Current Mission: {mission["title"] if mission else "None"}
-
-Mission Status: {mission["status"] if mission else "None"}
 """
-
-        system_context = brain_context + """
-
-You are NexusAI.
-
-You are an AI Software Engineering Mentor whose goal is to help the learner become interview-ready for an 18+ LPA Software Engineering role.
-
-==========================
-STUDENT PROFILE
-==========================
-
-Name: Shivang
-
-Program:
-Scaler Academy Software Development Program
-
-Background:
-Career switcher
-Non-CS degree
-Learning Software Engineering from scratch
-
-Target:
-18+ LPA Software Engineering Job
-
-Current Curriculum:
-Module 5 (AI & Agents)
-
-Completed Topics:
-- Java Basics
-- Arrays
-- Prefix Sum
-- Carry Forward
-- Sliding Window
-- Contribution Technique
-- Bit Manipulation
-- 2D Matrices
-- Strings
-
-==========================
-TEACHING RULES
-==========================
-
-1. Never immediately give the final solution.
-
-2. First understand what the learner already knows.
-
-3. Explain WHY before HOW.
-
-4. Use intuition before algorithms.
-
-5. Give brute force before optimization.
-
-6. Use examples with actual values.
-
-7. Identify the exact mistake instead of saying "wrong."
-
-8. Ask one verification question after complex explanations.
-
-9. Be honest.
-Do not sugarcoat weak understanding.
-
-10. Teach like a senior mentor, not a chatbot.
-
-==========================
-RESPONSE STYLE
-==========================
-
-- Short
-- Clear
-- Practical
-- Structured
-- No unnecessary padding
-
-Use headings where appropriate.
-
-Bold important concepts.
-
-==========================
-SCOPE
-==========================
-
-Only answer questions related to
-
-- Software Engineering
-- DSA
-- Java
-- Python
-- AI
-- System Design
-- Scaler Academy
-- Interview Preparation
-- Career Strategy
-
-If the learner asks something unrelated,
-politely redirect them.
-"""
-
-        # ================= AI RESPONSE =================
+        system_context = brain_context + """You are NexusAI, a specialized software engineering study assistant.
+STUDENT PROFILE:
+- Name: Shivang
+- Program: Scaler Academy Software Development Program
+- Current module: Module 5 (AI & Agents)
+- Completed: Java basics, intermediate DSA (arrays, prefix sum, carry forward, 
+  contribution technique, sliding window, bit manipulation, 2D matrices, strings)
+- Background: Career switcher, non-CS degree, learning from scratch
+- Target: 18 LPA software development role
+- Known weak areas: sliding window, contribution technique (not yet cold-solved)
+TEACHING RULES:
+1. Never give the answer immediately. Ask what the student already knows first.
+2. Use first principles. Explain WHY before HOW.
+3. When explaining algorithms: give intuition first, then example, then code.
+4. When the student is wrong: identify the exact error precisely.
+5. Use execution traces and concrete examples always.
+6. After every explanation, ask one question to verify understanding.
+7. If asked for code directly: give pseudocode first, real code second.
+8. For DSA problems: brute force first, then optimize.
+9. Never sugarcoat. If understanding is shallow, say so directly.
+RESPONSE FORMAT:
+- Concise and focused — no padding
+- Bold key terms on first use
+- End complex explanations with a verification question
+SCOPE: Only answer questions about software engineering, DSA, Java, Python, 
+system design, Scaler curriculum, career strategy, and AI/ML from Module 5.
+Redirect anything outside this scope."""
 
         with st.chat_message("assistant"):
-
             with st.spinner("Thinking..."):
-
-                response = client.chat.completions.create(
-
-                    model="llama-3.1-8b-instant",
-
-                    messages=[
-
-                        {
-                            "role": "system",
-                            "content": system_context
-                        },
-
-                        {
-                            "role": "user",
-                            "content": user_input
-                        }
-
-                    ]
-                )
-
-                reply = response.choices[0].message.content
-
-                st.write(reply)
-
-                st.session_state.messages.append(
-                    {
-                        "role": "assistant",
-                        "content": reply
-                    }
-                )
+                try:
+                    response = client.chat.completions.create(
+                        model="llama-3.1-8b-instant",
+                        messages=[
+                            {"role": "system", "content": system_context},
+                            {"role": "user", "content": user_input}
+                        ]
+                    )
+                    reply = response.choices[0].message.content
+                    st.write(reply)
+                    st.session_state.messages.append({"role": "assistant", "content": reply})
+                except Exception as e:
+                    st.error(f"⚠️ AI Inference error: {str(e)}. Please check your network or Groq API limits.")
 
 # ==================== TAB 2 ====================
 with tab2:
+    st.session_state.brain["current_module"] = "GapFinder"
+    section_header("🎯", "GapFinder", "Identify weak concepts and automatically generate targeted practice.", "#7A5636")
+    st.caption("Get a problem, solve it, get evaluated. Weakness tracked automatically.")
 
-    brain = st.session_state.brain
-    brain["current_module"] = "GapFinder"
+    weak_topics = get_weak_topics(st.session_state.db.get("gap_log", []))
+    if weak_topics:
+        st.warning(f"⚠️ Topics due for retest: {', '.join(sorted(list({w['topic'] for w in weak_topics if 'topic' in w})))}")
 
-    section_header(
-        "🎯",
-        "GapFinder",
-        "Identify weak concepts and automatically generate targeted practice.",
-        "#7A5636"
+    topics = ["Prefix Sum", "Sliding Window", "Contribution Technique",
+              "Bit Manipulation", "2D Matrices", "Strings"]
+
+    recommended = st.session_state.brain.get("recommended_topic")
+    default_index = 0
+    if recommended in topics:
+        default_index = topics.index(recommended)
+
+    selected_topic = st.selectbox(
+        "Select a topic:",
+        topics,
+        index=default_index,
+        key="gap_topic"
     )
 
-    # AI RECOMMENDATION
-    if brain.get("recommended_topic"):
-        st.info(f"🧠 AI Recommendation: Focus on **{brain['recommended_topic']}** next.")
-    else:
-        st.success("🎉 No weak topics detected. Continue strengthening your foundations.")
-
-    # LEARNING STATUS
-    weak_topics = get_weak_topics(st.session_state.db["gap_log"])
-    if weak_topics:
-        due_topics = sorted(list(set([t["topic"] for t in weak_topics])))
-        st.warning("⚠️ Topics due for revision: " + ", ".join(due_topics))
-
-    # TOPIC SELECTION
-    topics = [
-        "Prefix Sum",
-        "Sliding Window",
-        "Contribution Technique",
-        "Bit Manipulation",
-        "2D Matrices",
-        "Strings"
-    ]
-
-    recommended = brain.get("recommended_topic")
-    default_index = topics.index(recommended) if recommended in topics else 0
-
-    left, right = st.columns([3, 1])
-    with left:
-        selected_topic = st.selectbox(
-            "Choose Practice Topic",
-            topics,
-            index=default_index,
-            key="gap_topic"
-        )
-    with right:
-        difficulty = st.selectbox(
-            "Difficulty",
-            ["Adaptive", "Easy", "Medium", "Hard"],
-            key="gap_difficulty"
-        )
-
-    # TOPIC STATUS CARD
-    history = [
-        x for x in st.session_state.db["gap_log"]
-        if x.get("type") == "gap_entry" and x["topic"] == selected_topic
-    ]
-    solved = len(history)
-    avg_score = sum(x["score"] for x in history) / solved if solved else 0
-
-    if solved == 0:
-        mastery = "🆕 New Topic"
-    elif avg_score >= 1.8:
-        mastery = "🟢 Mastered"
-    elif avg_score >= 1.2:
-        mastery = "🟡 Developing"
-    else:
-        mastery = "🔴 Needs Practice"
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Mastery", mastery)
-    with col2:
-        st.metric("Attempts", solved)
-    with col3:
-        st.metric("Average Score", f"{avg_score:.1f}/2")
-
-    st.divider()
-
-    # GENERATE PROBLEM
-    if st.button("🚀 Generate Practice Problem", use_container_width=True, key="gen_problem"):
-        brain["current_focus"] = selected_topic
-        brain["last_activity"] = "Generated GapFinder problem"
-
-        with st.spinner("Generating personalized problem..."):
-            prompt = f"""
-You are an expert DSA mentor.
-
-Generate ONE ORIGINAL coding interview problem.
-
-Topic:
-{selected_topic}
-
-Difficulty:
-{difficulty}
-
-Requirements:
-
-1. Focus ONLY on this topic.
-
-2. Practical interview-style problem.
-
-3. Include:
-
-PROBLEM
-
-INPUT
-
-OUTPUT
-
-EXAMPLE
-
-CONSTRAINTS
-
-HINT
-
-Do NOT provide the solution.
-"""
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": "You generate high-quality DSA interview questions."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            st.session_state.current_problem = response.choices[0].message.content
-            st.session_state.current_topic = selected_topic
-            st.session_state.current_difficulty = difficulty
-
-    # PROBLEM DISPLAY
-    if "current_problem" in st.session_state:
-
-        st.divider()
-        st.subheader("📝 Practice Problem")
-
-        problem_card = st.container(border=True)
-        with problem_card:
-            st.markdown(st.session_state.current_problem)
-
-        st.write("")
-
-        # SESSION INFO
-        info1, info2, info3 = st.columns(3)
-        with info1:
-            st.metric("Topic", st.session_state.current_topic)
-        with info2:
-            st.metric("Difficulty", st.session_state.current_difficulty)
-        with info3:
-            attempt_history = [
-                x for x in st.session_state.db["gap_log"]
-                if x.get("type") == "gap_entry"
-                and x["topic"] == st.session_state.current_topic
-            ]
-            st.metric("Previous Attempts", len(attempt_history))
-
-        st.divider()
-
-        # HINT SYSTEM
-        if "hint_level" not in st.session_state:
-            st.session_state.hint_level = 0
-
-        st.markdown("### 💡 Need Help?")
-        h1, h2, h3 = st.columns(3)
-        with h1:
-            if st.button("Hint 1", use_container_width=True, key="hint1"):
-                st.session_state.hint_level = max(st.session_state.hint_level, 1)
-        with h2:
-            if st.button("Hint 2", use_container_width=True, key="hint2"):
-                st.session_state.hint_level = max(st.session_state.hint_level, 2)
-        with h3:
-            if st.button("I'm Stuck", use_container_width=True, key="stuck"):
-                st.session_state.hint_level = 3
-
-        if st.session_state.hint_level > 0:
-            with st.spinner("Generating hint..."):
-                hint_prompt = f"""
-Problem:
-{st.session_state.current_problem}
-
-Topic:
-{st.session_state.current_topic}
-
-Hint Level:
-{st.session_state.hint_level}
-
-Rules:
-Level 1: Give only a tiny nudge.
-Level 2: Explain the algorithmic direction.
-Level 3: Explain the complete intuition but DO NOT provide code.
-"""
-                hint_response = client.chat.completions.create(
+    if st.button("Generate Problem", key="gen_problem"):
+        st.session_state.brain["current_focus"] = selected_topic
+        st.session_state.brain["last_activity"] = "Generated a practice problem"
+        with st.spinner("Generating problem..."):
+            problem_prompt = f"""Generate a DSA problem specifically and only on: {selected_topic}.
+Format exactly like this:
+PROBLEM: [clear problem statement with example input and output]
+DIFFICULTY: [Easy/Medium]
+HINT: [one line hint, not the solution]"""
+            try:
+                response = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
                     messages=[
-                        {"role": "system", "content": "You are a DSA mentor."},
-                        {"role": "user", "content": hint_prompt}
+                        {"role": "system", "content": f"You are a DSA problem generator. Only generate problems about {selected_topic}."},
+                        {"role": "user", "content": problem_prompt}
                     ]
                 )
-                st.info(hint_response.choices[0].message.content)
+                st.session_state.current_problem = response.choices[0].message.content
+                st.session_state.current_topic = selected_topic
+            except Exception as e:
+                st.error(f"⚠️ Could not generate problem: {str(e)}")
 
-        st.divider()
+    if "current_problem" in st.session_state and st.session_state.current_problem:
+        st.markdown("### Problem")
+        st.markdown(st.session_state.current_problem)
 
-        # TIMER
-        st.subheader("⏱ Practice Timer")
-        timer1, timer2, timer3 = st.columns(3)
-        with timer1:
-            if st.button("▶ Start", key="gap_timer_start_btn", use_container_width=True):
-                st.session_state.gap_timer_start = datetime.now()
-                st.session_state.gap_timer_running = True
-        with timer2:
-            if st.button("⏹ Stop", key="gap_timer_stop_btn", use_container_width=True):
-                if st.session_state.get("gap_timer_running"):
-                    elapsed = (datetime.now() - st.session_state.gap_timer_start).seconds
-                    mins = elapsed // 60
-                    secs = elapsed % 60
-                    st.session_state.gap_elapsed = f"{mins}m {secs}s"
-                    st.session_state.gap_timer_running = False
-        with timer3:
-            if st.button("🔄 Reset", key="gap_timer_reset_btn", use_container_width=True):
-                st.session_state.pop("gap_timer_start", None)
-                st.session_state.pop("gap_elapsed", None)
-                st.session_state.gap_timer_running = False
-
-        if st.session_state.get("gap_elapsed"):
-            st.success(f"Time Taken: {st.session_state.gap_elapsed}")
-
-        st.divider()
-
-        # SOLUTION
-        st.subheader("✍ Your Solution")
         user_solution = st.text_area(
-            "Explain your approach, pseudocode, or code.",
-            height=260,
-            placeholder="""1. Explain your intuition.
-2. Explain the algorithm.
-3. Mention Time Complexity.
-4. Mention Space Complexity.
-5. Finally write code if possible.""",
+            "Write your approach — pseudocode, logic, or actual code:",
+            height=200,
             key="solution_input"
         )
 
-        st.write("")
-
-        # EVALUATION ENGINE
-        if st.button("✅ Evaluate My Solution", use_container_width=True, key="eval_solution"):
+        if st.button("Evaluate My Solution", key="eval_solution"):
             if len(user_solution.strip()) < 10:
-                st.warning("Write a genuine solution attempt before evaluation.")
+                st.warning("Write an actual solution attempt before evaluating.")
             else:
-                with st.spinner("Evaluating your solution..."):
-                    evaluation_prompt = f"""
-You are a Senior Software Engineer interviewing a candidate for an 18-22 LPA Software Engineering role.
+                with st.spinner("Evaluating..."):
+                    eval_prompt = f"""Problem: {st.session_state.current_problem}
 
-TOPIC:
-{st.session_state.current_topic}
+Student's solution: {user_solution}
 
-DIFFICULTY:
-{st.session_state.current_difficulty}
+Evaluate strictly:
+1. CORRECT: What did they get right?
+2. MISSING: What's wrong or missing?
+3. OPTIMAL SOLUTION: Show the correct approach
+4. SCORE: 0 (wrong), 1 (partial), 2 (correct) — number only on this line formatted as 'SCORE: X'
+5. VERDICT: "Move on" or "Review this topic"
 
-PROBLEM:
-{st.session_state.current_problem}
+Be strict. Do not give 2 unless genuinely correct."""
+                    try:
+                        eval_response = client.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=[
+                                {"role": "system", "content": "You are a strict DSA interviewer. Evaluate honestly."},
+                                {"role": "user", "content": eval_prompt}
+                            ]
+                        )
+                        evaluation = eval_response.choices[0].message.content
+                        st.markdown("### Evaluation")
+                        st.markdown(evaluation)
 
-CANDIDATE SOLUTION:
-{user_solution}
+                        # Robust regex score extraction
+                        score_match = re.search(r'score\s*:\s*([012])', evaluation, re.IGNORECASE)
+                        score = int(score_match.group(1)) if score_match else 1
 
-Evaluate using the following format exactly.
+                        st.session_state.db["gap_log"].append({
+                            "type": "gap_entry",
+                            "topic": st.session_state.get("current_topic", selected_topic),
+                            "date": datetime.now().strftime("%Y-%m-%d"),
+                            "score": score,
+                            "evaluation": evaluation
+                        })
+                        save_data(st.session_state.db)
+                        update_recommended_topic()
 
-## Communication
-(How well they explained the thought process)
+                        if score == 2:
+                            st.session_state.brain["current_focus"] = None
+                        else:
+                            st.session_state.brain["current_focus"] = st.session_state.get("current_topic", selected_topic)
 
-## Correctness
-(Is the solution logically correct?)
-
-## Algorithm
-(Is the chosen algorithm appropriate?)
-
-## Time Complexity
-
-## Space Complexity
-
-## Code Quality
-
-## Biggest Mistake
-
-## Better Approach
-
-## SCORE
-Return ONLY one number:
-0
-1
-or
-2
-
-## FINAL VERDICT
-One sentence only.
-
-Be strict.
-Do not award 2 unless the solution would pass a real interview.
-"""
-                    eval_response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
-                        messages=[
-                            {"role": "system", "content": "You are a strict Senior Software Engineer conducting technical interviews."},
-                            {"role": "user", "content": evaluation_prompt}
-                        ]
-                    )
-                    evaluation = eval_response.choices[0].message.content
-
-                st.divider()
-                st.subheader("📋 Evaluation")
-                evaluation_card = st.container(border=True)
-                with evaluation_card:
-                    st.markdown(evaluation)
-
-                # SCORE EXTRACTION
-                score = 1
-                for line in evaluation.splitlines():
-                    line = line.strip().upper()
-                    if "## SCORE" in line:
-                        continue
-                    if line == "0":
-                        score = 0
-                        break
-                    if line == "1":
-                        score = 1
-                        break
-                    if line == "2":
-                        score = 2
-                        break
-
-                # DATABASE UPDATE
-                st.session_state.db["gap_log"].append({
-                    "type": "gap_entry",
-                    "topic": st.session_state.current_topic,
-                    "difficulty": st.session_state.current_difficulty,
-                    "date": datetime.now().strftime("%Y-%m-%d"),
-                    "score": score,
-                    "evaluation": evaluation
-                })
-                save_data(st.session_state.db)
-
-                # AI BRAIN UPDATE
-                brain = st.session_state.brain
-                brain["last_activity"] = "Completed GapFinder evaluation"
-                if score == 2:
-                    brain["current_focus"] = None
-                else:
-                    brain["current_focus"] = st.session_state.current_topic
-                update_recommended_topic()
-
-                # MISSION UPDATE
-                mission = st.session_state.db.get("current_mission")
-                if mission:
-                    if score == 2:
-                        mission["progress"] = min(100, mission.get("progress", 0) + 25)
-                        if mission["progress"] >= 100:
-                            mission["progress"] = 100
-                            mission["status"] = MISSION_COMPLETED
-                            mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    save_data(st.session_state.db)
-
-                # RESULT
-                st.divider()
-                if score == 2:
-                    st.success("✅ Excellent. Topic marked as solid.")
-                elif score == 1:
-                    st.warning("🟡 Partial understanding. Revisit this topic.")
-                else:
-                    st.error("🔴 Weak understanding detected. This topic has been added back to your learning queue.")
-
-                # NEXT ACTION
-                st.info(
-                    f"🎯 Recommended Next Focus: "
-                    f"{brain.get('recommended_topic') or 'Continue solving problems'}"
-                )
+                        if score <= 1:
+                            st.error(f"⚠️ {st.session_state.get('current_topic', selected_topic)} flagged as weak. Will resurface in 7 days.")
+                        else:
+                            st.success(f"✅ {st.session_state.get('current_topic', selected_topic)} marked solid.")
+                    except Exception as e:
+                        st.error(f"⚠️ Evaluation failed: {str(e)}")
 
 # ==================== TAB 3 ====================
 with tab3:
@@ -1088,9 +721,9 @@ with tab3:
     section_header("⚡", "FlowState", "Enter deep work mode with distraction-free coding sessions.", "#5C4B8A")
     st.caption("3PM–11PM | Check-in at 7PM | End of day at 11PM")
 
-    today = datetime.now().strftime("%Y-%m-%d")
-    weak = get_weak_topics(st.session_state.db["gap_log"])
-    weak_context = f"Weak topics due for retest: {', '.join(set([w['topic'] for w in weak]))}" if weak else "No weak topics flagged yet."
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    weak = get_weak_topics(st.session_state.db.get("gap_log", []))
+    weak_context = f"Weak topics due for retest: {', '.join(sorted(list({w['topic'] for w in weak if 'topic' in w})))}" if weak else "No weak topics flagged yet."
 
     st.markdown("### 📋 Daily Planning")
     priority1 = st.text_input("Priority 1 (most critical):", placeholder="e.g. Cold-solve sliding window")
@@ -1116,17 +749,19 @@ Generate a specific hour-by-hour plan from 3PM to 11PM.
 Include short breaks. Be realistic.
 If weak topics exist, schedule retest time.
 End with: MOST CRITICAL TASK TODAY: [one task]"""
+                try:
+                    plan_response = client.chat.completions.create(
+                        model="llama-3.1-8b-instant",
+                        messages=[
+                            {"role": "system", "content": "You are a strict, realistic study planner. Specific time blocks only."},
+                            {"role": "user", "content": plan_prompt}
+                        ]
+                    )
+                    st.session_state.flow_plan = plan_response.choices[0].message.content
+                except Exception as e:
+                    st.error(f"⚠️ Could not generate plan: {str(e)}")
 
-                plan_response = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
-                    messages=[
-                        {"role": "system", "content": "You are a strict, realistic study planner. Specific time blocks only."},
-                        {"role": "user", "content": plan_prompt}
-                    ]
-                )
-                st.session_state.flow_plan = plan_response.choices[0].message.content
-
-    if st.session_state.flow_plan:
+    if st.session_state.get("flow_plan"):
         st.markdown("### Your Plan")
         st.markdown(st.session_state.flow_plan)
 
@@ -1149,16 +784,18 @@ What happened since 3PM: {checkin_report}
 It is 7PM. 4 hours remain.
 Generate revised plan for 7PM-11PM only.
 Protect the most critical task above everything else."""
-
-                    replan_response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
-                        messages=[
-                            {"role": "system", "content": "You are a strict replanner. Protect critical tasks."},
-                            {"role": "user", "content": replan_prompt}
-                        ]
-                    )
-                    st.markdown("### Revised Plan (7PM-11PM)")
-                    st.markdown(replan_response.choices[0].message.content)
+                    try:
+                        replan_response = client.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=[
+                                {"role": "system", "content": "You are a strict replanner. Protect critical tasks."},
+                                {"role": "user", "content": replan_prompt}
+                            ]
+                        )
+                        st.markdown("### Revised Plan (7PM-11PM)")
+                        st.markdown(replan_response.choices[0].message.content)
+                    except Exception as e:
+                        st.error(f"⚠️ Could not replan: {str(e)}")
 
         st.markdown("---")
         st.markdown("### 🌙 11PM End of Day")
@@ -1181,23 +818,25 @@ Give:
 2. CARRY FORWARD: Uncompleted tasks for tomorrow
 3. TOMORROW'S FOCUS: Single most important thing
 4. HONEST ASSESSMENT: One sentence, no sugarcoating"""
+                    try:
+                        eod_response = client.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=[
+                                {"role": "system", "content": "You are a strict daily reviewer. Honest assessment only."},
+                                {"role": "user", "content": eod_prompt}
+                            ]
+                        )
+                        review = eod_response.choices[0].message.content
+                        st.markdown("### Day Review")
+                        st.markdown(review)
 
-                    eod_response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
-                        messages=[
-                            {"role": "system", "content": "You are a strict daily reviewer. Honest assessment only."},
-                            {"role": "user", "content": eod_prompt}
-                        ]
-                    )
-                    review = eod_response.choices[0].message.content
-                    st.markdown("### Day Review")
-                    st.markdown(review)
-
-                    st.session_state.db["day_logs"].append({
-                        "date": today, "completed": eod_report, "review": review
-                    })
-                    save_data(st.session_state.db)
-                    st.success("✅ Day logged. See you tomorrow.")
+                        st.session_state.db["day_logs"].append({
+                            "date": today_str, "completed": eod_report, "review": review
+                        })
+                        save_data(st.session_state.db)
+                        st.success("✅ Day logged. See you tomorrow.")
+                    except Exception as e:
+                        st.error(f"⚠️ Could not log day: {str(e)}")
 
 # ==================== TAB 4 ====================
 with tab4:
@@ -1206,8 +845,8 @@ with tab4:
     st.caption("Your progress at a glance.")
 
     db = st.session_state.db
-    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
-    day_logs = db["day_logs"]
+    gap_log = [e for e in db.get("gap_log", []) if isinstance(e, dict) and e.get("type") == "gap_entry"]
+    day_logs = db.get("day_logs", [])
 
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -1226,16 +865,17 @@ with tab4:
     if weak_entries:
         topic_data = {}
         for e in weak_entries:
-            topic = e["topic"]
+            topic = e.get("topic", "General")
             if topic not in topic_data:
-                topic_data[topic] = {"attempts": 0, "last_attempt": e["date"]}
+                topic_data[topic] = {"attempts": 0, "last_attempt": e.get("date", datetime.now().strftime("%Y-%m-%d"))}
             topic_data[topic]["attempts"] += 1
-            if e["date"] > topic_data[topic]["last_attempt"]:
-                topic_data[topic]["last_attempt"] = e["date"]
+            if str(e.get("date", "")) > str(topic_data[topic]["last_attempt"]):
+                topic_data[topic]["last_attempt"] = e.get("date", datetime.now().strftime("%Y-%m-%d"))
 
         for topic, data in topic_data.items():
-            days_since = (datetime.now().date() - datetime.strptime(data["last_attempt"], "%Y-%m-%d").date()).days
-            retest_due = "🔴 Due now" if days_since >= 7 else f"🟡 In {7 - days_since} days"
+            last_date = parse_date_safe(data["last_attempt"])
+            days_since = (datetime.now().date() - last_date).days
+            retest_due = "🔴 Due now" if days_since >= 7 else f"🟡 In {max(0, 7 - days_since)} days"
             st.markdown(f"**{topic}** — {data['attempts']} weak attempt(s) — Last: {data['last_attempt']} — Retest: {retest_due}")
     else:
         st.success("No weak topics yet. Keep solving.")
@@ -1245,15 +885,16 @@ with tab4:
     if gap_log:
         topic_scores = {}
         for e in gap_log:
-            topic = e["topic"]
+            topic = e.get("topic", "General")
             if topic not in topic_scores:
                 topic_scores[topic] = []
             topic_scores[topic].append(e.get("score", 0))
 
         for topic, scores in topic_scores.items():
-            avg = sum(scores) / len(scores)
-            bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
-            st.markdown(f"{bar} **{topic}** — {len(scores)} attempt(s) — Avg score: {avg:.1f}/2")
+            if scores:
+                avg = sum(scores) / len(scores)
+                bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
+                st.markdown(f"{bar} **{topic}** — {len(scores)} attempt(s) — Avg score: {avg:.1f}/2")
     else:
         st.info("No attempts logged yet. Start with GapFinder.")
 
@@ -1261,9 +902,10 @@ with tab4:
     st.markdown("### 🌙 Recent Day Logs")
     if day_logs:
         for log in reversed(day_logs[-5:]):
-            with st.expander(f"📅 {log['date']}"):
-                st.markdown(f"**Completed:** {log['completed']}")
-                st.markdown(f"**Review:** {log['review']}")
+            if isinstance(log, dict):
+                with st.expander(f"📅 {log.get('date', 'Unknown Date')}"):
+                    st.markdown(f"**Completed:** {log.get('completed', 'N/A')}")
+                    st.markdown(f"**Review:** {log.get('review', 'N/A')}")
     else:
         st.info("No days logged yet. Use FlowState tonight.")
 
@@ -1279,9 +921,9 @@ with tab5:
     st.caption("Interview-format questions. Evaluated at the hiring bar.")
 
     db = st.session_state.db
-    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
+    gap_log = [e for e in db.get("gap_log", []) if isinstance(e, dict) and e.get("type") == "gap_entry"]
 
-    weak_topics_mock = list(set([e["topic"] for e in gap_log if e.get("score", 0) <= 1]))
+    weak_topics_mock = sorted(list({e["topic"] for e in gap_log if e.get("score", 0) <= 1 and "topic" in e}))
     if weak_topics_mock:
         st.warning(f"⚠️ Recommended: Practice weak topics first — {', '.join(weak_topics_mock)}")
 
@@ -1308,19 +950,21 @@ QUESTION: [problem statement, clear and complete]
 WHAT WE'RE TESTING: [skill this evaluates]
 TIME LIMIT: [realistic time in minutes]
 WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cover]"""
+            try:
+                q_response = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[
+                        {"role": "system", "content": f"You are a strict technical interviewer for a {difficulty} {interview_topic} question."},
+                        {"role": "user", "content": question_prompt}
+                    ]
+                )
+                st.session_state.mock_question = q_response.choices[0].message.content
+                st.session_state.mock_topic_val = interview_topic
+                st.session_state.mock_difficulty_val = difficulty
+            except Exception as e:
+                st.error(f"⚠️ Could not start interview: {str(e)}")
 
-            q_response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": f"You are a strict technical interviewer for a {difficulty} {interview_topic} question."},
-                    {"role": "user", "content": question_prompt}
-                ]
-            )
-            st.session_state.mock_question = q_response.choices[0].message.content
-            st.session_state.mock_topic_val = interview_topic
-            st.session_state.mock_difficulty_val = difficulty
-
-    if "mock_question" in st.session_state:
+    if "mock_question" in st.session_state and st.session_state.mock_question:
         st.markdown("### Your Question")
         st.markdown(st.session_state.mock_question)
 
@@ -1334,10 +978,13 @@ WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cove
         with col_t2:
             if st.button("⏹️ Stop", key="stop_timer"):
                 if st.session_state.get("timer_running") and "timer_start" in st.session_state:
-                    elapsed = (datetime.now() - st.session_state.timer_start).seconds
-                    mins = elapsed // 60
-                    secs = elapsed % 60
-                    st.session_state.timer_result = f"{mins}m {secs}s"
+                    try:
+                        elapsed = (datetime.now() - st.session_state.timer_start).total_seconds()
+                        mins = int(elapsed // 60)
+                        secs = int(elapsed % 60)
+                        st.session_state.timer_result = f"{mins}m {secs}s"
+                    except Exception:
+                        st.session_state.timer_result = "Unknown time"
                     st.session_state.timer_running = False
         with col_t3:
             if st.button("🔄 Reset", key="reset_timer"):
@@ -1346,7 +993,10 @@ WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cove
                 st.session_state.timer_running = False
 
         if st.session_state.get("timer_result"):
-            mins_taken = int(st.session_state.timer_result.split("m")[0])
+            try:
+                mins_taken = int(st.session_state.timer_result.split("m")[0])
+            except (ValueError, IndexError):
+                mins_taken = 0
             st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
             if mins_taken >= 20:
                 st.warning("Over 20 minutes — flag this topic for extra practice.")
@@ -1370,8 +1020,8 @@ WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cove
 
 Question: {st.session_state.mock_question}
 Candidate's answer: {mock_answer}
-Topic: {st.session_state.mock_topic_val}
-Difficulty: {st.session_state.mock_difficulty_val}
+Topic: {st.session_state.get('mock_topic_val', 'General DSA')}
+Difficulty: {st.session_state.get('mock_difficulty_val', 'Medium')}
 
 Evaluate at the actual hiring bar:
 1. COMMUNICATION: Did they explain thinking before jumping to code?
@@ -1381,33 +1031,35 @@ Evaluate at the actual hiring bar:
 5. WHAT WOULD REJECT: Specific dealbreakers
 6. HIRING VERDICT: "Strong Hire", "Hire", or "No Hire" — one sentence reason
 7. WHAT TO SAY INSTEAD: Show exactly what a hired candidate would say for the weakest part"""
-
-                    eval_response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
-                        messages=[
-                            {"role": "system", "content": "You are a strict senior engineer interviewer. No sugarcoating. Weak answers get No Hire."},
-                            {"role": "user", "content": eval_prompt}
+                    try:
+                        eval_response = client.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=[
+                                {"role": "system", "content": "You are a strict senior engineer interviewer. No sugarcoating. Weak answers get No Hire."},
+                                {"role": "user", "content": eval_prompt}
+                            ]
                         ]
-                    )
-                    evaluation = eval_response.choices[0].message.content
-                    st.markdown("### Interviewer Evaluation")
-                    st.markdown(evaluation)
+                        evaluation = eval_response.choices[0].message.content
+                        st.markdown("### Interviewer Evaluation")
+                        st.markdown(evaluation)
 
-                    verdict = "No Hire"
-                    if "Strong Hire" in evaluation:
-                        verdict = "Strong Hire"
-                        st.success("✅ Strong Hire.")
-                    elif "No Hire" in evaluation:
-                        st.error("❌ No Hire — Review this topic.")
-                    else:
-                        verdict = "Hire"
-                        st.warning("🟡 Hire — Room for improvement.")
+                        verdict = "No Hire"
+                        if "Strong Hire" in evaluation:
+                            verdict = "Strong Hire"
+                            st.success("✅ Strong Hire.")
+                        elif "No Hire" in evaluation:
+                            st.error("❌ No Hire — Review this topic.")
+                        else:
+                            verdict = "Hire"
+                            st.warning("🟡 Hire — Room for improvement.")
 
-                    st.session_state.db["gap_log"].append({
-                        "type": "mock_entry",
-                        "topic": st.session_state.mock_topic_val,
-                        "difficulty": st.session_state.mock_difficulty_val,
-                        "date": datetime.now().strftime("%Y-%m-%d"),
-                        "verdict": verdict
-                    })
-                    save_data(st.session_state.db)
+                        st.session_state.db["gap_log"].append({
+                            "type": "mock_entry",
+                            "topic": st.session_state.get("mock_topic_val", "General"),
+                            "difficulty": st.session_state.get("mock_difficulty_val", "Medium"),
+                            "date": datetime.now().strftime("%Y-%m-%d"),
+                            "verdict": verdict
+                        })
+                        save_data(st.session_state.db)
+                    except Exception as e:
+                        st.error(f"⚠️ Evaluation failed: {str(e)}")
