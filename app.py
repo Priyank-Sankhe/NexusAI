@@ -617,6 +617,10 @@ if st.session_state.db["current_mission"] is None:
 
         st.session_state.db["current_mission"] = mission
 
+        st.session_state.brain["current_focus"] = mission["title"]
+
+        st.session_state.brain["recommended_action"] = "Start Mission"
+
         save_data(st.session_state.db)
 
 # ================= SIDEBAR =================
