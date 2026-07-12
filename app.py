@@ -921,4 +921,145 @@ with tab5:
     st.caption("Interview-format questions. Evaluated at the hiring bar.")
 
     db = st.session_state.db
-    gap_log =
+    gap_log = [e for e in db.get("gap_log", []) if isinstance(e, dict) and e.get("type") == "gap_entry"]
+
+    weak_topics_mock = sorted(list({e["topic"] for e in gap_log if e.get("score", 0) <= 1 and "topic" in e}))
+    if weak_topics_mock:
+        st.warning(f"⚠️ Recommended: Practice weak topics first — {', '.join(weak_topics_mock)}")
+
+    topics = ["Prefix Sum", "Sliding Window", "Contribution Technique",
+              "Bit Manipulation", "2D Matrices", "Strings"]
+
+    col1, col2 = st.columns(2)
+    with col1:
+        interview_topic = st.selectbox("Select topic:", topics, key="mock_topic_select")
+    with col2:
+        difficulty = st.selectbox("Difficulty:", ["Easy", "Medium", "Hard"], key="mock_diff_select")
+
+    if st.button("Start Interview Question", key="start_interview"):
+        st.session_state.brain["current_focus"] = interview_topic
+        st.session_state.brain["last_activity"] = "Started a mock interview"
+        with st.spinner("Preparing your interview question..."):
+            question_prompt = f"""You are a technical interviewer at a product company hiring for an 18-22 LPA role.
+
+Generate ONE interview question on: {interview_topic}
+Difficulty: {difficulty}
+
+Format exactly:
+QUESTION: [problem statement, clear and complete]
+WHAT WE'RE TESTING: [skill this evaluates]
+TIME LIMIT: [realistic time in minutes]
+WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cover]"""
+            try:
+                q_response = client.chat.completions.create(
+                    model="llama-3.1-8b-instant",
+                    messages=[
+                        {"role": "system", "content": f"You are a strict technical interviewer for a {difficulty} {interview_topic} question."},
+                        {"role": "user", "content": question_prompt}
+                    ]
+                )
+                st.session_state.mock_question = q_response.choices[0].message.content
+                st.session_state.mock_topic_val = interview_topic
+                st.session_state.mock_difficulty_val = difficulty
+            except Exception as e:
+                st.error(f"⚠️ Could not start interview: {str(e)}")
+
+    if "mock_question" in st.session_state and st.session_state.mock_question:
+        st.markdown("### Your Question")
+        st.markdown(st.session_state.mock_question)
+
+        st.markdown("### ⏱️ Timer")
+        col_t1, col_t2, col_t3 = st.columns(3)
+        with col_t1:
+            if st.button("▶️ Start", key="start_timer"):
+                st.session_state.timer_start = datetime.now()
+                st.session_state.timer_running = True
+                st.session_state.timer_result = None
+        with col_t2:
+            if st.button("⏹️ Stop", key="stop_timer"):
+                if st.session_state.get("timer_running") and "timer_start" in st.session_state:
+                    try:
+                        elapsed = (datetime.now() - st.session_state.timer_start).total_seconds()
+                        mins = int(elapsed // 60)
+                        secs = int(elapsed % 60)
+                        st.session_state.timer_result = f"{mins}m {secs}s"
+                    except Exception:
+                        st.session_state.timer_result = "Unknown time"
+                    st.session_state.timer_running = False
+        with col_t3:
+            if st.button("🔄 Reset", key="reset_timer"):
+                st.session_state.pop("timer_start", None)
+                st.session_state.pop("timer_result", None)
+                st.session_state.timer_running = False
+
+        if st.session_state.get("timer_result"):
+            try:
+                mins_taken = int(st.session_state.timer_result.split("m")[0])
+            except (ValueError, IndexError):
+                mins_taken = 0
+            st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
+            if mins_taken >= 20:
+                st.warning("Over 20 minutes — flag this topic for extra practice.")
+
+        st.markdown("### Your Answer")
+        st.caption("Think out loud. Explain approach first, then solution — exactly like a real interview.")
+
+        mock_answer = st.text_area(
+            "Your answer:",
+            height=250,
+            placeholder="Explain your thought process first, then your approach, then your solution...",
+            key="mock_answer"
+        )
+
+        if st.button("Evaluate My Answer", key="eval_mock"):
+            if len(mock_answer.strip()) < 20:
+                st.warning("Write a real answer before evaluating.")
+            else:
+                with st.spinner("Evaluating at the hiring bar..."):
+                    eval_prompt = f"""You are a senior engineer interviewing for an 18-22 LPA role.
+
+Question: {st.session_state.mock_question}
+Candidate's answer: {mock_answer}
+Topic: {st.session_state.get('mock_topic_val', 'General DSA')}
+Difficulty: {st.session_state.get('mock_difficulty_val', 'Medium')}
+
+Evaluate at the actual hiring bar:
+1. COMMUNICATION: Did they explain thinking before jumping to code?
+2. APPROACH: Correct and logical?
+3. SOLUTION QUALITY: Correct, optimal, or flawed?
+4. WHAT IMPRESSED: Specific positives
+5. WHAT WOULD REJECT: Specific dealbreakers
+6. HIRING VERDICT: "Strong Hire", "Hire", or "No Hire" — one sentence reason
+7. WHAT TO SAY INSTEAD: Show exactly what a hired candidate would say for the weakest part"""
+                    try:
+                        eval_response = client.chat.completions.create(
+                            model="llama-3.1-8b-instant",
+                            messages=[
+                                {"role": "system", "content": "You are a strict senior engineer interviewer. No sugarcoating. Weak answers get No Hire."},
+                                {"role": "user", "content": eval_prompt}
+                            ]
+                        )
+                        evaluation = eval_response.choices[0].message.content
+                        st.markdown("### Interviewer Evaluation")
+                        st.markdown(evaluation)
+
+                        verdict = "No Hire"
+                        if "Strong Hire" in evaluation:
+                            verdict = "Strong Hire"
+                            st.success("✅ Strong Hire.")
+                        elif "No Hire" in evaluation:
+                            st.error("❌ No Hire — Review this topic.")
+                        else:
+                            verdict = "Hire"
+                            st.warning("🟡 Hire — Room for improvement.")
+
+                        st.session_state.db["gap_log"].append({
+                            "type": "mock_entry",
+                            "topic": st.session_state.get("mock_topic_val", "General"),
+                            "difficulty": st.session_state.get("mock_difficulty_val", "Medium"),
+                            "date": datetime.now().strftime("%Y-%m-%d"),
+                            "verdict": verdict
+                        })
+                        save_data(st.session_state.db)
+                    except Exception as e:
+                        st.error(f"⚠️ Evaluation failed: {str(e)}")
