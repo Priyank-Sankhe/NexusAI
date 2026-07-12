@@ -566,6 +566,25 @@ def generate_daily_mission():
         priority=100,
         duration=25
     )
+    def update_recommended_topic():
+
+     weak_topics = get_weak_topics(
+        st.session_state.db["gap_log"]
+     )
+
+    if weak_topics:
+
+        weakest = sorted(
+            weak_topics,
+            key=lambda x: x["days_since"],
+            reverse=True
+        )[0]
+
+        st.session_state.brain["recommended_topic"] = weakest["topic"]
+
+    else:
+
+        st.session_state.brain["recommended_topic"] = None
 
 if "db" not in st.session_state:
     st.session_state.db = load_data()
@@ -575,6 +594,7 @@ if "flow_plan" not in st.session_state:
     st.session_state.flow_plan = None
 if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
+    update_recommended_topic()
 if "brain" not in st.session_state:
 
     st.session_state.brain = {
