@@ -551,7 +551,7 @@ def generate_daily_mission():
             title="Complete Today's Scaler Session",
             reason="No weak topics detected yet.",
             priority=100,
-            duration=60
+            duration=1
         )
 
     weakest = sorted(
