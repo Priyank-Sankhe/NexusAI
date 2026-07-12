@@ -874,6 +874,7 @@ with tab1:
     user_input = st.chat_input("Ask anything...")
 
     if user_input:
+        st.session_state.brain["last_activity"] = "Asked a study question"
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.write(user_input)
@@ -946,6 +947,8 @@ with tab2:
     selected_topic = st.selectbox("Select a topic:", topics, key="gap_topic")
 
     if st.button("Generate Problem", key="gen_problem"):
+       st.session_state.brain["current_focus"] = selected_topic
+       st.session_state.brain["last_activity"] = "Generated a practice problem"
         with st.spinner("Generating problem..."):
             problem_prompt = f"""Generate a DSA problem specifically and only on: {selected_topic}.
 Format exactly like this:
@@ -1045,6 +1048,7 @@ with tab3:
     hours_available = st.slider("Hours available today:", 1, 8, 6)
 
     if st.button("Generate My Plan", key="gen_plan"):
+        st.session_state.brain["last_activity"] = "Planning today's study session"
         if not priority1.strip():
             st.warning("Enter at least Priority 1.")
         else:
@@ -1249,6 +1253,8 @@ with tab5:
         difficulty = st.selectbox("Difficulty:", ["Easy", "Medium", "Hard"], key="mock_diff_select")
 
     if st.button("Start Interview Question", key="start_interview"):
+        st.session_state.brain["current_focus"] = interview_topic
+        st.session_state.brain["last_activity"] = "Started a mock interview"
         with st.spinner("Preparing your interview question..."):
             question_prompt = f"""You are a technical interviewer at a product company hiring for an 18-22 LPA role.
 
