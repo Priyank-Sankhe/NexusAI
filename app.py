@@ -860,6 +860,7 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 
 # ==================== TAB 1 ====================
 with tab1:
+    st.session_state.brain["current_module"] = "Study Chat"
     section_header(
     "💬",
     "Study Chat",
@@ -926,6 +927,7 @@ For anything outside this scope, redirect to the relevant topic."""
 
 # ==================== TAB 2 ====================
 with tab2:
+    st.session_state.brain["current_module"] = "GapFinder"
     section_header(
     "🎯",
     "GapFinder",
@@ -1023,6 +1025,7 @@ Be strict. Do not give 2 unless genuinely correct."""
 
 # ==================== TAB 3 ====================
 with tab3:
+    st.session_state.brain["current_module"] = "FlowState"
     section_header(
     "⚡",
     "FlowState",
@@ -1143,6 +1146,7 @@ Give:
 
 # ==================== TAB 4 ====================
 with tab4:
+    st.session_state.brain["current_module"] = "Dashboard"
     section_header(
     "📊",
     "Dashboard",
