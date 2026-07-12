@@ -518,7 +518,7 @@ with tab1:
     Current Module: {brain.get("current_module")}
     Last Activity: {brain.get("last_activity")}
     """
-        system_context = brain_context + """You are NexusAI, a specialized software engineering study assistant.
+    system_context = brain_context + """You are NexusAI, a specialized software engineering study assistant.
 
 STUDENT PROFILE:
 - Name: Shivang
