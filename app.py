@@ -3,6 +3,8 @@ from groq import Groq
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import requests
+import threading
+import copy
 
 st.set_page_config(page_title="NexusAI", layout="wide")
 st.markdown("""
@@ -180,15 +182,23 @@ def load_data():
     except:
         return default_db
 
-def save_data(data):
+def _save_data_worker(data_snapshot):
     try:
         requests.put(
             JSONBIN_URL,
             headers={"X-Master-Key": MASTER_KEY, "Content-Type": "application/json"},
-            json=data
+            json=data_snapshot
         )
     except:
-        st.error("Failed to save data.")
+        pass
+
+def save_data(data):
+    try:
+        # Prevent UI thread locking by offloading network I/O to a background daemon thread
+        data_snapshot = copy.deepcopy(data)
+        threading.Thread(target=_save_data_worker, args=(data_snapshot,), daemon=True).start()
+    except:
+        st.error("Failed to queue background data sync.")
 
 # ==================== HELPERS ====================
 def get_weak_topics(gap_log):
@@ -248,6 +258,62 @@ def section_header(icon, title, subtitle, accent):
         <p style="margin-top:8px;color:#E6D7C8;font-size:15px;">{subtitle}</p>
     </div>
     """, unsafe_allow_html=True)
+
+# ==================== RUNTIME FRAGMENTS ====================
+@st.fragment
+def gap_timer_component():
+    st.markdown("### ⏱️ Practice Timer")
+    col_gt1, col_gt2, col_gt3 = st.columns(3)
+    with col_gt1:
+        if st.button("▶️ Start Timer", key="start_gap_timer"):
+            st.session_state.gap_timer_start = datetime.now()
+            st.session_state.gap_timer_running = True
+            st.session_state.gap_timer_result = None
+    with col_gt2:
+        if st.button("⏹️ Stop Timer", key="stop_gap_timer"):
+            if st.session_state.get("gap_timer_running") and "gap_timer_start" in st.session_state:
+                elapsed = (datetime.now() - st.session_state.gap_timer_start).seconds
+                mins = elapsed // 60
+                secs = elapsed % 60
+                st.session_state.gap_timer_result = f"{mins}m {secs}s"
+                st.session_state.gap_timer_running = False
+    with col_gt3:
+        if st.button("🔄 Reset Timer", key="reset_gap_timer"):
+            st.session_state.pop("gap_timer_start", None)
+            st.session_state.pop("gap_timer_result", None)
+            st.session_state.gap_timer_running = False
+
+    if st.session_state.get("gap_timer_result"):
+        st.info(f"⏱️ Time taken to solve: {st.session_state.gap_timer_result}")
+
+@st.fragment
+def mock_timer_component():
+    st.markdown("### ⏱️ Timer")
+    col_t1, col_t2, col_t3 = st.columns(3)
+    with col_t1:
+        if st.button("▶️ Start", key="start_timer"):
+            st.session_state.timer_start = datetime.now()
+            st.session_state.timer_running = True
+            st.session_state.timer_result = None
+    with col_t2:
+        if st.button("⏹️ Stop", key="stop_timer"):
+            if st.session_state.get("timer_running") and "timer_start" in st.session_state:
+                elapsed = (datetime.now() - st.session_state.timer_start).seconds
+                mins = elapsed // 60
+                secs = elapsed % 60
+                st.session_state.timer_result = f"{mins}m {secs}s"
+                st.session_state.timer_running = False
+    with col_t3:
+        if st.button("🔄 Reset", key="reset_timer"):
+            st.session_state.pop("timer_start", None)
+            st.session_state.pop("timer_result", None)
+            st.session_state.timer_running = False
+
+    if st.session_state.get("timer_result"):
+        mins_taken = int(st.session_state.timer_result.split("m")[0])
+        st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
+        if mins_taken >= 20:
+            st.warning("Over 20 minutes — flag this topic for extra practice.")
 
 # ==================== SESSION STATE ====================
 if "db" not in st.session_state:
@@ -587,30 +653,8 @@ HINT: [one line hint, not the solution]"""
         st.markdown("### Problem")
         st.markdown(st.session_state.current_problem)
 
-        # ==================== GAPFINDER TIMER ====================
-        st.markdown("### ⏱️ Practice Timer")
-        col_gt1, col_gt2, col_gt3 = st.columns(3)
-        with col_gt1:
-            if st.button("▶️ Start Timer", key="start_gap_timer"):
-                st.session_state.gap_timer_start = datetime.now()
-                st.session_state.gap_timer_running = True
-                st.session_state.gap_timer_result = None
-        with col_gt2:
-            if st.button("⏹️ Stop Timer", key="stop_gap_timer"):
-                if st.session_state.get("gap_timer_running") and "gap_timer_start" in st.session_state:
-                    elapsed = (datetime.now() - st.session_state.gap_timer_start).seconds
-                    mins = elapsed // 60
-                    secs = elapsed % 60
-                    st.session_state.gap_timer_result = f"{mins}m {secs}s"
-                    st.session_state.gap_timer_running = False
-        with col_gt3:
-            if st.button("🔄 Reset Timer", key="reset_gap_timer"):
-                st.session_state.pop("gap_timer_start", None)
-                st.session_state.pop("gap_timer_result", None)
-                st.session_state.gap_timer_running = False
-
-        if st.session_state.get("gap_timer_result"):
-            st.info(f"⏱️ Time taken to solve: {st.session_state.gap_timer_result}")
+        # Isolated component preventing page reruns on timer toggles
+        gap_timer_component()
 
         user_solution = st.text_area(
             "Write your approach — pseudocode, logic, or actual code:",
@@ -636,8 +680,9 @@ Evaluate strictly:
 
 Be strict. Do not give 2 unless genuinely correct."""
 
+                    # Upgraded to 70B parameter structural precision model
                     eval_response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
+                        model="llama-3.3-70b-specdec",
                         messages=[
                             {"role": "system", "content": "You are a strict DSA interviewer. Evaluate honestly."},
                             {"role": "user", "content": eval_prompt}
@@ -916,32 +961,8 @@ WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cove
         st.markdown("### Your Question")
         st.markdown(st.session_state.mock_question)
 
-        st.markdown("### ⏱️ Timer")
-        col_t1, col_t2, col_t3 = st.columns(3)
-        with col_t1:
-            if st.button("▶️ Start", key="start_timer"):
-                st.session_state.timer_start = datetime.now()
-                st.session_state.timer_running = True
-                st.session_state.timer_result = None
-        with col_t2:
-            if st.button("⏹️ Stop", key="stop_timer"):
-                if st.session_state.get("timer_running") and "timer_start" in st.session_state:
-                    elapsed = (datetime.now() - st.session_state.timer_start).seconds
-                    mins = elapsed // 60
-                    secs = elapsed % 60
-                    st.session_state.timer_result = f"{mins}m {secs}s"
-                    st.session_state.timer_running = False
-        with col_t3:
-            if st.button("🔄 Reset", key="reset_timer"):
-                st.session_state.pop("timer_start", None)
-                st.session_state.pop("timer_result", None)
-                st.session_state.timer_running = False
-
-        if st.session_state.get("timer_result"):
-            mins_taken = int(st.session_state.timer_result.split("m")[0])
-            st.info(f"⏱️ Time taken: {st.session_state.timer_result}")
-            if mins_taken >= 20:
-                st.warning("Over 20 minutes — flag this topic for extra practice.")
+        # Isolated component preventing page reruns on timer toggles
+        mock_timer_component()
 
         st.markdown("### Your Answer")
         st.caption("Think out loud. Explain approach first, then solution — exactly like a real interview.")
@@ -974,8 +995,9 @@ Evaluate at the actual hiring bar:
 6. HIRING VERDICT: "Strong Hire", "Hire", or "No Hire" — one sentence reason
 7. WHAT TO SAY INSTEAD: Show exactly what a hired candidate would say for the weakest part"""
 
+                    # Upgraded to 70B parameter structural precision model
                     eval_response = client.chat.completions.create(
-                        model="llama-3.1-8b-instant",
+                        model="llama-3.3-70b-specdec",
                         messages=[
                             {"role": "system", "content": "You are a strict senior engineer interviewer. No sugarcoating. Weak answers get No Hire."},
                             {"role": "user", "content": eval_prompt}
