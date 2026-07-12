@@ -579,21 +579,22 @@ if "brain" not in st.session_state:
 
     st.session_state.brain = {
 
-        "current_focus": None,
+    "current_focus": None,
 
-        "current_module": None,
+    "current_module": None,
 
-        "recommended_action": None,
+    "recommended_action": None,
 
-        "last_activity": None,
+    "recommended_topic": None,
 
-        "learning_mode": "normal",
+    "last_activity": None,
 
-        "streak": 0,
+    "learning_mode": "normal",
 
-        "energy": "unknown"
-    }
+    "streak": 0,
 
+    "energy": "unknown"
+}
 # ================= CURRENT MISSION =================
 
 mission = st.session_state.db.get("current_mission")
