@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 from groq import Groq
 from datetime import datetime
 from zoneinfo import ZoneInfo
@@ -80,6 +80,19 @@ h4 { color:#EBD5BF; }
     box-shadow: 0 12px 28px rgba(0,0,0,.35);
 }
 
+/* Sidebar Custom Button Styling to match selected state */
+div[data-testid="stSidebar"] .stButton>button {
+    background: rgba(59,42,30,.4);
+    border: 1px solid rgba(255,255,255,.05);
+    border-radius:12px;
+    margin-bottom:8px;
+    color: #D7C5B6;
+}
+div[data-testid="stSidebar"] .stButton>button:hover {
+    background: #7D5436 !important;
+    color: white !important;
+}
+
 .stTextInput input {
     background:#2A2019 !important;
     color:white !important;
@@ -99,21 +112,6 @@ h4 { color:#EBD5BF; }
 }
 
 .stSlider { padding-top:12px; }
-
-.stTabs [role="tablist"] { gap:12px; margin-bottom:20px; }
-.stTabs [role="tab"] {
-    background:#2C1F17;
-    color:#D7C5B6;
-    border-radius:12px;
-    padding:12px 22px;
-    transition:.25s;
-    font-weight:600;
-}
-.stTabs [role="tab"]:hover { background:#5A3A27; color:white; }
-.stTabs [aria-selected="true"] {
-    background: linear-gradient(135deg, #8A5A36, #B77A48) !important;
-    color:white !important;
-}
 
 [data-testid="stChatMessage"] {
     background: rgba(59,42,30,.62);
@@ -143,12 +141,6 @@ section[data-testid="stSidebar"] {
 }
 section[data-testid="stSidebar"] .block-container { padding-top:1.8rem; }
 section[data-testid="stSidebar"] h2 { color:#FFF3E6; }
-section[data-testid="stSidebar"] .stButton>button {
-    background:#3B291E;
-    border-radius:12px;
-    margin-bottom:8px;
-}
-section[data-testid="stSidebar"] .stButton>button:hover { background:#7D5436; }
 
 .stAlert { border-radius:16px; border:none; box-shadow:0 8px 20px rgba(0,0,0,.18); }
 </style>
@@ -194,7 +186,6 @@ def _save_data_worker(data_snapshot):
 
 def save_data(data):
     try:
-        # Prevent UI thread locking by offloading network I/O to a background daemon thread
         data_snapshot = copy.deepcopy(data)
         threading.Thread(target=_save_data_worker, args=(data_snapshot,), daemon=True).start()
     except:
@@ -326,6 +317,8 @@ if "timer_running" not in st.session_state:
     st.session_state.timer_running = False
 if "gap_timer_running" not in st.session_state:
     st.session_state.gap_timer_running = False
+if "current_page" not in st.session_state:
+    st.session_state.current_page = "📊 Dashboard"
 if "brain" not in st.session_state:
     st.session_state.brain = {
         "current_focus": None,
@@ -367,6 +360,10 @@ if mission:
     mission.setdefault("started_at", None)
     mission.setdefault("completed_at", None)
 
+# ==================== NAVIGATION CALLBACKS ====================
+def set_page(page_name):
+    st.session_state.current_page = page_name
+
 # ==================== SIDEBAR ====================
 with st.sidebar:
     st.markdown("## 🧠 NexusAI")
@@ -387,159 +384,183 @@ with st.sidebar:
     st.divider()
 
     st.markdown("### ⚡ Quick Actions")
-    st.button("💬 Study Chat", use_container_width=True)
-    st.button("🎯 GapFinder", use_container_width=True)
-    st.button("🎤 Mock Interview", use_container_width=True)
-    st.button("📊 Dashboard", use_container_width=True)
+    # State-driven router mapping
+    pages = ["📊 Dashboard", "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "🎤 Mock Interview"]
+    for p in pages:
+        # Highlight active view using simple visual cues
+        label = f"• {p} •" if st.session_state.current_page == p else p
+        if st.button(label, key=f"nav_{p}", use_container_width=True):
+            set_page(p)
+            st.rerun()
+            
     st.divider()
     st.caption("NexusAI v1.0")
 
-# ==================== HERO ====================
-now = datetime.now(ZoneInfo("Asia/Kolkata"))
-hour = now.hour
-today_name = now.strftime("%A")
+# ==================== RENDER COMPONENT CONTROLLERS ====================
 
-if hour < 12:
-    greeting = "Good Morning ☀️"
-elif hour < 17:
-    greeting = "Good Afternoon 🌤️"
-else:
-    greeting = "Good Evening 🌙"
+if st.session_state.current_page == "📊 Dashboard":
+    st.session_state.brain["current_module"] = "Dashboard"
+    
+    # Hero Summary
+    now = datetime.now(ZoneInfo("Asia/Kolkata"))
+    hour = now.hour
+    today_name = now.strftime("%A")
 
-gap_log_h = st.session_state.db["gap_log"]
-day_logs_h = st.session_state.db["day_logs"]
-problem_count = len([e for e in gap_log_h if e.get("type") == "gap_entry"])
-weak_count = len({e["topic"] for e in gap_log_h if e.get("type") == "gap_entry" and e.get("score", 0) <= 1})
-day_count = len(day_logs_h)
+    if hour < 12: greeting = "Good Morning ☀️"
+    elif hour < 17: greeting = "Good Afternoon 🌤️"
+    else: greeting = "Good Evening 🌙"
 
-hero = st.container(border=True)
-with hero:
-    left, right = st.columns([4, 1])
-    with left:
-        st.title("🧠 NexusAI")
-        st.subheader(greeting)
-        st.write("### Ready to continue your Software Engineering journey?")
-        st.caption("Every coding session brings you closer to becoming a Software Engineer.")
-    with right:
-        st.markdown(f"### 📅 {today_name}")
+    gap_log_h = st.session_state.db["gap_log"]
+    day_logs_h = st.session_state.db["day_logs"]
+    problem_count = len([e for e in gap_log_h if e.get("type") == "gap_entry"])
+    weak_count = len({e["topic"] for e in gap_log_h if e.get("type") == "gap_entry" and e.get("score", 0) <= 1})
+    day_count = len(day_logs_h)
 
-st.write("")
-
-a, b, c = st.columns(3)
-with a:
-    st.metric("📚 Problems Solved", problem_count)
-with b:
-    st.metric("🎯 Weak Topics", weak_count)
-with c:
-    st.metric("📅 Study Days", day_count)
-
-st.write("")
-
-# ==================== AI RECOMMENDATION ====================
-brain = st.session_state.brain
-recommended_topic = brain.get("recommended_topic")
-
-if recommended_topic:
-    recommendation = (
-        f"🧠 NexusAI Recommendation\n\n"
-        f"Your highest priority right now is **{recommended_topic}**.\n"
-        f"Strengthen this topic before moving on."
-    )
-elif brain["current_focus"]:
-    recommendation = (
-        f"🎯 Continue working on **{brain['current_focus']}**."
-    )
-elif mission and mission["status"] == MISSION_PENDING:
-    recommendation = (
-        f"🚀 Start today's mission: **{mission['title']}**."
-    )
-else:
-    recommendation = (
-        "💡 Generate a new GapFinder problem to keep improving."
-    )
-
-st.info(recommendation)
-
-if recommended_topic:
-    if st.button(
-        f"🎯 Practice {recommended_topic}",
-        key="practice_recommended_topic",
-        use_container_width=True
-    ):
-        st.session_state.brain["current_focus"] = recommended_topic
-        st.success(f"{recommended_topic} is now your active focus.")
-        st.rerun()
-
-elif mission and mission["status"] == MISSION_PENDING:
-    if st.button(
-        "🚀 Start Current Mission",
-        key="hero_start_mission",
-        use_container_width=True
-    ):
-        mission["status"] = MISSION_ACTIVE
-        mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        save_data(st.session_state.db)
-        st.rerun()
-
-# ==================== CURRENT MISSION ====================
-st.markdown("## 🎯 Current Mission")
-mission = st.session_state.db["current_mission"]
-mission_card = st.container(border=True)
-
-with mission_card:
-    if mission:
-        left, right = st.columns([3, 1])
+    hero = st.container(border=True)
+    with hero:
+        left, right = st.columns([4, 1])
         with left:
-            st.subheader(mission["title"])
-            priority = mission.get("priority", 100)
-            if priority >= 90:
-                st.success("🔥 High Priority")
-            elif priority >= 60:
-                st.warning("⚡ Medium Priority")
-            else:
-                st.info("📌 Low Priority")
-
-            st.caption(mission["reason"])
-
-            if mission["status"] == MISSION_ACTIVE and mission["started_at"]:
-                started = datetime.strptime(mission["started_at"], "%Y-%m-%d %H:%M:%S")
-                elapsed_seconds = (datetime.now() - started).total_seconds()
-                total_seconds = mission["duration"] * 60
-                progress = min(100, int((elapsed_seconds / total_seconds) * 100))
-                mission["progress"] = progress
-
-            st.progress(mission["progress"] / 100)
-            st.caption(f"Progress: {mission['progress']}%")
-
+            st.title("🧠 Command Center")
+            st.subheader(greeting)
+            st.write("### Ready to continue your Software Engineering journey?")
+            st.caption("Every coding session brings you closer to becoming a Software Engineer.")
         with right:
-            st.metric("Duration", f"{mission['duration']} min")
-            st.metric("Status", mission["status"].title())
+            st.markdown(f"### 📅 {today_name}")
 
-            if mission["status"] == MISSION_PENDING:
-                if st.button("▶ Start Mission", key="start_mission_btn", use_container_width=True):
-                    mission["status"] = MISSION_ACTIVE
-                    mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    save_data(st.session_state.db)
-                    st.rerun()
+    st.write("")
+    a, b, c = st.columns(3)
+    with a: st.metric("📚 Problems Solved", problem_count)
+    with b: st.metric("🎯 Weak Topics", weak_count)
+    with c: st.metric("📅 Study Days", day_count)
+    st.write("")
 
-            if mission["status"] == MISSION_ACTIVE:
-                if st.button("✅ Complete Mission", key="complete_mission_btn", use_container_width=True):
-                    mission["status"] = MISSION_COMPLETED
-                    mission["progress"] = 100
-                    mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    st.session_state.db["current_mission"] = None
-                    save_data(st.session_state.db)
-                    st.rerun()
+    # AI Recommendation
+    brain = st.session_state.brain
+    recommended_topic = brain.get("recommended_topic")
+
+    if recommended_topic:
+        recommendation = f"🧠 **NexusAI Recommendation:** Your highest priority right now is **{recommended_topic}**. Strengthen this topic before moving on."
+    elif brain["current_focus"]:
+        recommendation = f"🎯 **Status:** Continue working on active focus: **{brain['current_focus']}**."
+    elif mission and mission["status"] == MISSION_PENDING:
+        recommendation = f"🚀 **Status:** Start today's queued mission: **{mission['title']}**."
     else:
-        st.info("No active mission yet. Solve problems in GapFinder to generate one.")
+        recommendation = "💡 **Status:** Clear skies! Generate a new GapFinder problem to keep improving."
 
-# ==================== TABS ====================
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
-    "💬 Study Chat", "🎯 GapFinder", "⚡ FlowState", "📊 Dashboard", "🎤 Mock Interview"
-])
+    st.info(recommendation)
 
-# ==================== TAB 1 ====================
-with tab1:
+    if recommended_topic:
+        if st.button(f"🎯 Route to GapFinder to Practice {recommended_topic}", use_container_width=True):
+            st.session_state.brain["current_focus"] = recommended_topic
+            set_page("🎯 GapFinder")
+            st.rerun()
+    elif mission and mission["status"] == MISSION_PENDING:
+        if st.button("🚀 Start Current Mission", use_container_width=True):
+            mission["status"] = MISSION_ACTIVE
+            mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            save_data(st.session_state.db)
+            st.rerun()
+
+    # Current Mission Card
+    st.markdown("---")
+    st.markdown("### 🎯 Active Mission Track")
+    mission_card = st.container(border=True)
+    with mission_card:
+        if mission:
+            left, right = st.columns([3, 1])
+            with left:
+                st.subheader(mission["title"])
+                priority = mission.get("priority", 100)
+                if priority >= 90: st.success("🔥 High Priority")
+                elif priority >= 60: st.warning("⚡ Medium Priority")
+                else: st.info("📌 Low Priority")
+
+                st.caption(mission["reason"])
+
+                if mission["status"] == MISSION_ACTIVE and mission["started_at"]:
+                    started = datetime.strptime(mission["started_at"], "%Y-%m-%d %H:%M:%S")
+                    elapsed_seconds = (datetime.now() - started).total_seconds()
+                    total_seconds = mission["duration"] * 60
+                    progress = min(100, int((elapsed_seconds / total_seconds) * 100))
+                    mission["progress"] = progress
+
+                st.progress(mission["progress"] / 100)
+                st.caption(f"Progress: {mission['progress']}%")
+
+            with right:
+                st.metric("Duration", f"{mission['duration']} min")
+                st.metric("Status", mission["status"].title())
+
+                if mission["status"] == MISSION_PENDING:
+                    if st.button("▶ Start Mission", key="dash_start_mission", use_container_width=True):
+                        mission["status"] = MISSION_ACTIVE
+                        mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        save_data(st.session_state.db)
+                        st.rerun()
+
+                if mission["status"] == MISSION_ACTIVE:
+                    if st.button("✅ Complete Mission", key="dash_complete_mission", use_container_width=True):
+                        mission["status"] = MISSION_COMPLETED
+                        mission["progress"] = 100
+                        mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                        st.session_state.db["current_mission"] = None
+                        save_data(st.session_state.db)
+                        st.rerun()
+        else:
+            st.info("No active mission yet. Solve problems in GapFinder to generate performance markers.")
+
+    # Analytical Logs (Moved inside Dashboard view where they belong)
+    st.markdown("---")
+    st.markdown("### ⚠️ Tracked Gaps & Retest Windows")
+    db = st.session_state.db
+    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
+    day_logs = db["day_logs"]
+    weak_entries = [e for e in gap_log if e.get("score", 0) <= 1]
+
+    if weak_entries:
+        topic_data = {}
+        for e in weak_entries:
+            topic = e["topic"]
+            if topic not in topic_data:
+                topic_data[topic] = {"attempts": 0, "last_attempt": e["date"]}
+            topic_data[topic]["attempts"] += 1
+            if e["date"] > topic_data[topic]["last_attempt"]:
+                topic_data[topic]["last_attempt"] = e["date"]
+
+        for topic, data in topic_data.items():
+            days_since = (datetime.now().date() - datetime.strptime(data["last_attempt"], "%Y-%m-%d").date()).days
+            retest_due = "🔴 Due now" if days_since >= 7 else f"🟡 In {7 - days_since} days"
+            st.markdown(f"**{topic}** — {data['attempts']} weak attempt(s) — Last: {data['last_attempt']} — Retest: {retest_due}")
+    else:
+        st.success("No weak metrics flagged yet.")
+
+    st.markdown("---")
+    st.markdown("### 📈 Analytics Matrix")
+    if gap_log:
+        topic_scores = {}
+        for e in gap_log:
+            topic = e["topic"]
+            if topic not in topic_scores: topic_scores[topic] = []
+            topic_scores[topic].append(e.get("score", 0))
+
+        for topic, scores in topic_scores.items():
+            avg = sum(scores) / len(scores)
+            bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
+            st.markdown(f"{bar} **{topic}** — {len(scores)} attempt(s) — Avg score: {avg:.1f}/2")
+    else:
+        st.info("No metrics tracked yet. Practice code concepts via side modules to populate charts.")
+
+    st.markdown("---")
+    st.markdown("### 🌙 Archived Day Logs")
+    if day_logs:
+        for log in reversed(day_logs[-5:]):
+            with st.expander(f"📅 {log['date']}"):
+                st.markdown(f"**Completed:** {log['completed']}")
+                st.markdown(f"**Review:** {log['review']}")
+    else:
+        st.info("No study intervals closed yet.")
+
+elif st.session_state.current_page == "💬 Study Chat":
     st.session_state.brain["current_module"] = "Study Chat"
     section_header("💬", "Study Chat", "Ask anything about your Scaler journey. NexusAI remembers your learning context.", "#385C7A")
 
@@ -556,20 +577,13 @@ with tab1:
             st.write(user_input)
 
         brain = st.session_state.brain
-        brain_context = f"""
-CURRENT AI STATE
-Current Focus: {brain.get("current_focus")}
-Recommended Topic: {brain.get("recommended_topic")}
-Current Module: {brain.get("current_module")}
-Last Activity: {brain.get("last_activity")}
-"""
+        brain_context = f"CURRENT AI STATE\nCurrent Focus: {brain.get('current_focus')}\nRecommended Topic: {brain.get('recommended_topic')}\nCurrent Module: {brain.get('current_module')}\nLast Activity: {brain.get('last_activity')}\n"
         system_context = brain_context + """You are NexusAI, a specialized software engineering study assistant.
 STUDENT PROFILE:
 - Name: Shivang
 - Program: Scaler Academy Software Development Program
 - Current module: Module 5 (AI & Agents)
-- Completed: Java basics, intermediate DSA (arrays, prefix sum, carry forward, 
-  contribution technique, sliding window, bit manipulation, 2D matrices, strings)
+- Completed: Java basics, intermediate DSA (arrays, prefix sum, carry forward, contribution technique, sliding window, bit manipulation, 2D matrices, strings)
 - Background: Career switcher, non-CS degree, learning from scratch
 - Target: 18 LPA software development role
 - Known weak areas: sliding window, contribution technique (not yet cold-solved)
@@ -587,9 +601,7 @@ RESPONSE FORMAT:
 - Concise and focused — no padding
 - Bold key terms on first use
 - End complex explanations with a verification question
-SCOPE: Only answer questions about software engineering, DSA, Java, Python, 
-system design, Scaler curriculum, career strategy, and AI/ML from Module 5.
-Redirect anything outside this scope."""
+SCOPE: Only answer questions about software engineering, DSA, Java, Python, system design, Scaler curriculum, career strategy, and AI/ML from Module 5. Redirect anything outside this scope."""
 
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
@@ -604,41 +616,26 @@ Redirect anything outside this scope."""
                 st.write(reply)
                 st.session_state.messages.append({"role": "assistant", "content": reply})
 
-# ==================== TAB 2 ====================
-with tab2:
+elif st.session_state.current_page == "🎯 GapFinder":
     st.session_state.brain["current_module"] = "GapFinder"
     section_header("🎯", "GapFinder", "Identify weak concepts and automatically generate targeted practice.", "#7A5636")
-    st.caption("Get a problem, solve it, get evaluated. Weakness tracked automatically.")
 
     weak_topics = get_weak_topics(st.session_state.db["gap_log"])
     if weak_topics:
         st.warning(f"⚠️ Topics due for retest: {', '.join(set([w['topic'] for w in weak_topics]))}")
 
-    topics = ["Prefix Sum", "Sliding Window", "Contribution Technique",
-              "Bit Manipulation", "2D Matrices", "Strings"]
-
+    topics = ["Prefix Sum", "Sliding Window", "Contribution Technique", "Bit Manipulation", "2D Matrices", "Strings"]
     recommended = st.session_state.brain.get("recommended_topic")
     default_index = 0
-    if recommended in topics:
-        default_index = topics.index(recommended)
+    if recommended in topics: default_index = topics.index(recommended)
 
-    selected_topic = st.selectbox(
-        "Select a topic:",
-        topics,
-        index=default_index,
-        key="gap_topic"
-    )
+    selected_topic = st.selectbox("Select a topic:", topics, index=default_index, key="gap_topic")
 
     if st.button("Generate Problem", key="gen_problem"):
         st.session_state.brain["current_focus"] = selected_topic
         st.session_state.brain["last_activity"] = "Generated a practice problem"
         with st.spinner("Generating problem..."):
-            problem_prompt = f"""Generate a DSA problem specifically and only on: {selected_topic}.
-Format exactly like this:
-PROBLEM: [clear problem statement with example input and output]
-DIFFICULTY: [Easy/Medium]
-HINT: [one line hint, not the solution]"""
-
+            problem_prompt = f"Generate a DSA problem specifically and only on: {selected_topic}.\nFormat exactly like this:\nPROBLEM: [clear problem statement with example input and output]\nDIFFICULTY: [Easy/Medium]\nHINT: [one line hint, not the solution]"
             response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
@@ -653,34 +650,16 @@ HINT: [one line hint, not the solution]"""
         st.markdown("### Problem")
         st.markdown(st.session_state.current_problem)
 
-        # Isolated component preventing page reruns on timer toggles
         gap_timer_component()
 
-        user_solution = st.text_area(
-            "Write your approach — pseudocode, logic, or actual code:",
-            height=200,
-            key="solution_input"
-        )
+        user_solution = st.text_area("Write your approach — pseudocode, logic, or actual code:", height=200, key="solution_input")
 
         if st.button("Evaluate My Solution", key="eval_solution"):
             if len(user_solution.strip()) < 10:
                 st.warning("Write an actual solution attempt before evaluating.")
             else:
                 with st.spinner("Evaluating..."):
-                    eval_prompt = f"""Problem: {st.session_state.current_problem}
-
-Student's solution: {user_solution}
-
-Evaluate strictly:
-1. CORRECT: What did they get right?
-2. MISSING: What's wrong or missing?
-3. OPTIMAL SOLUTION: Show the correct approach
-4. SCORE: 0 (wrong), 1 (partial), 2 (correct) — number only
-5. VERDICT: "Move on" or "Review this topic"
-
-Be strict. Do not give 2 unless genuinely correct."""
-
-                    # Upgraded to 70B parameter structural precision model
+                    eval_prompt = f"Problem: {st.session_state.current_problem}\n\nStudent's solution: {user_solution}\n\nEvaluate strictly:\n1. CORRECT: What did they get right?\n2. MISSING: What's wrong or missing?\n3. OPTIMAL SOLUTION: Show the correct approach\n4. SCORE: 0 (wrong), 1 (partial), 2 (correct) — number only\n5. VERDICT: \"Move on\" or \"Review this topic\"\n\nBe strict. Do not give 2 unless genuinely correct."
                     eval_response = client.chat.completions.create(
                         model="llama-3.3-70b-specdec",
                         messages=[
@@ -709,21 +688,15 @@ Be strict. Do not give 2 unless genuinely correct."""
                     save_data(st.session_state.db)
                     update_recommended_topic()
 
-                    if score == 2:
-                        st.session_state.brain["current_focus"] = None
-                    else:
-                        st.session_state.brain["current_focus"] = st.session_state.current_topic
+                    if score == 2: st.session_state.brain["current_focus"] = None
+                    else: st.session_state.brain["current_focus"] = st.session_state.current_topic
 
-                    if score <= 1:
-                        st.error(f"⚠️ {st.session_state.current_topic} flagged as weak. Will resurface in 7 days.")
-                    else:
-                        st.success(f"✅ {st.session_state.current_topic} marked solid.")
+                    if score <= 1: st.error(f"⚠️ {st.session_state.current_topic} flagged as weak. Will resurface in 7 days.")
+                    else: st.success(f"✅ {st.session_state.current_topic} marked solid.")
 
-# ==================== TAB 3 ====================
-with tab3:
+elif st.session_state.current_page == "⚡ FlowState":
     st.session_state.brain["current_module"] = "FlowState"
     section_header("⚡", "FlowState", "Enter deep work mode with distraction-free coding sessions.", "#5C4B8A")
-    st.caption("3PM–11PM | Check-in at 7PM | End of day at 11PM")
 
     today = datetime.now().strftime("%Y-%m-%d")
     weak = get_weak_topics(st.session_state.db["gap_log"])
@@ -737,23 +710,10 @@ with tab3:
 
     if st.button("Generate My Plan", key="gen_plan"):
         st.session_state.brain["last_activity"] = "Planning today's study session"
-        if not priority1.strip():
-            st.warning("Enter at least Priority 1.")
+        if not priority1.strip(): st.warning("Enter at least Priority 1.")
         else:
             with st.spinner("Building your day..."):
-                plan_prompt = f"""You are a strict study planner.
-Study window: 3PM to 11PM ({hours_available} hours available)
-Check-in: 7PM | End of day: 11PM
-Priorities:
-1. {priority1}
-2. {priority2 if priority2 else 'None'}
-3. {priority3 if priority3 else 'None'}
-Context: {weak_context}
-Generate a specific hour-by-hour plan from 3PM to 11PM.
-Include short breaks. Be realistic.
-If weak topics exist, schedule retest time.
-End with: MOST CRITICAL TASK TODAY: [one task]"""
-
+                plan_prompt = f"You are a strict study planner.\nStudy window: 3PM to 11PM ({hours_available} hours available)\nCheck-in: 7PM | End of day: 11PM\nPriorities:\n1. {priority1}\n2. {priority2 if priority2 else 'None'}\n3. {priority3 if priority3 else 'None'}\nContext: {weak_context}\nGenerate a specific hour-by-hour plan from 3PM to 11PM.\nInclude short breaks. Be realistic.\nIf weak topics exist, schedule retest time.\nEnd with: MOST CRITICAL TASK TODAY: [one task]"
                 plan_response = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
                     messages=[
@@ -769,24 +729,13 @@ End with: MOST CRITICAL TASK TODAY: [one task]"""
 
         st.markdown("---")
         st.markdown("### ⏰ 7PM Check-in")
-        checkin_report = st.text_area(
-            "What actually happened since 3PM?",
-            placeholder="e.g. Completed priority 1, got distracted for 1 hour",
-            height=100,
-            key="checkin"
-        )
+        checkin_report = st.text_area("What actually happened since 3PM?", placeholder="e.g. Completed priority 1, got distracted for 1 hour", height=100, key="checkin")
 
         if st.button("Replan 7PM-11PM", key="replan"):
-            if len(checkin_report.strip()) < 10:
-                st.warning("Report what actually happened before replanning.")
+            if len(checkin_report.strip()) < 10: st.warning("Report what actually happened before replanning.")
             else:
                 with st.spinner("Replanning..."):
-                    replan_prompt = f"""Original plan: {st.session_state.flow_plan}
-What happened since 3PM: {checkin_report}
-It is 7PM. 4 hours remain.
-Generate revised plan for 7PM-11PM only.
-Protect the most critical task above everything else."""
-
+                    replan_prompt = f"Original plan: {st.session_state.flow_plan}\nWhat happened since 3PM: {checkin_report}\nIt is 7PM. 4 hours remain.\nGenerate revised plan for 7PM-11PM only.\nProtect the most critical task above everything else."
                     replan_response = client.chat.completions.create(
                         model="llama-3.1-8b-instant",
                         messages=[
@@ -799,26 +748,13 @@ Protect the most critical task above everything else."""
 
         st.markdown("---")
         st.markdown("### 🌙 11PM End of Day")
-        eod_report = st.text_area(
-            "What did you complete today?",
-            placeholder="e.g. Priority 1 done, Priority 2 half done",
-            height=100,
-            key="eod"
-        )
+        eod_report = st.text_area("What did you complete today?", placeholder="e.g. Priority 1 done, Priority 2 half done", height=100, key="eod")
 
         if st.button("Log Day", key="log_day"):
-            if len(eod_report.strip()) < 10:
-                st.warning("Report what you completed before logging.")
+            if len(eod_report.strip()) < 10: st.warning("Report what you completed before logging.")
             else:
                 with st.spinner("Logging your day..."):
-                    eod_prompt = f"""Today's plan: {st.session_state.flow_plan}
-What was completed: {eod_report}
-Give:
-1. COMPLETION RATE: % of planned work done
-2. CARRY FORWARD: Uncompleted tasks for tomorrow
-3. TOMORROW'S FOCUS: Single most important thing
-4. HONEST ASSESSMENT: One sentence, no sugarcoating"""
-
+                    eod_prompt = f"Today's plan: {st.session_state.flow_plan}\nWhat was completed: {eod_report}\nGive:\n1. COMPLETION RATE: % of planned work done\n2. CARRY FORWARD: Uncompleted tasks for tomorrow\n3. TOMORROW'S FOCUS: Single most important thing\n4. HONEST ASSESSMENT: One sentence, no sugarcoating"
                     eod_response = client.chat.completions.create(
                         model="llama-3.1-8b-instant",
                         messages=[
@@ -830,90 +766,13 @@ Give:
                     st.markdown("### Day Review")
                     st.markdown(review)
 
-                    st.session_state.db["day_logs"].append({
-                        "date": today, "completed": eod_report, "review": review
-                    })
+                    st.session_state.db["day_logs"].append({"date": today, "completed": eod_report, "review": review})
                     save_data(st.session_state.db)
                     st.success("✅ Day logged. See you tomorrow.")
 
-# ==================== TAB 4 ====================
-with tab4:
-    st.session_state.brain["current_module"] = "Dashboard"
-    section_header("📊", "Dashboard", "Track your progress and monitor long-term consistency.", "#2E6B52")
-    st.caption("Your progress at a glance.")
-
-    db = st.session_state.db
-    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
-    day_logs = db["day_logs"]
-
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Problems Attempted", len(gap_log))
-    with col2:
-        st.metric("Marked Solid ✅", len([e for e in gap_log if e.get("score", 0) == 2]))
-    with col3:
-        st.metric("Flagged Weak ⚠️", len([e for e in gap_log if e.get("score", 0) <= 1]))
-    with col4:
-        st.metric("Days Logged", len(day_logs))
-
-    st.markdown("---")
-    st.markdown("### ⚠️ Weak Topics")
-    weak_entries = [e for e in gap_log if e.get("score", 0) <= 1]
-
-    if weak_entries:
-        topic_data = {}
-        for e in weak_entries:
-            topic = e["topic"]
-            if topic not in topic_data:
-                topic_data[topic] = {"attempts": 0, "last_attempt": e["date"]}
-            topic_data[topic]["attempts"] += 1
-            if e["date"] > topic_data[topic]["last_attempt"]:
-                topic_data[topic]["last_attempt"] = e["date"]
-
-        for topic, data in topic_data.items():
-            days_since = (datetime.now().date() - datetime.strptime(data["last_attempt"], "%Y-%m-%d").date()).days
-            retest_due = "🔴 Due now" if days_since >= 7 else f"🟡 In {7 - days_since} days"
-            st.markdown(f"**{topic}** — {data['attempts']} weak attempt(s) — Last: {data['last_attempt']} — Retest: {retest_due}")
-    else:
-        st.success("No weak topics yet. Keep solving.")
-
-    st.markdown("---")
-    st.markdown("### 📈 Topic Performance")
-    if gap_log:
-        topic_scores = {}
-        for e in gap_log:
-            topic = e["topic"]
-            if topic not in topic_scores:
-                topic_scores[topic] = []
-            topic_scores[topic].append(e.get("score", 0))
-
-        for topic, scores in topic_scores.items():
-            avg = sum(scores) / len(scores)
-            bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
-            st.markdown(f"{bar} **{topic}** — {len(scores)} attempt(s) — Avg score: {avg:.1f}/2")
-    else:
-        st.info("No attempts logged yet. Start with GapFinder.")
-
-    st.markdown("---")
-    st.markdown("### 🌙 Recent Day Logs")
-    if day_logs:
-        for log in reversed(day_logs[-5:]):
-            with st.expander(f"📅 {log['date']}"):
-                st.markdown(f"**Completed:** {log['completed']}")
-                st.markdown(f"**Review:** {log['review']}")
-    else:
-        st.info("No days logged yet. Use FlowState tonight.")
-
-    st.markdown("---")
-    if st.button("🔄 Refresh Dashboard", key="refresh"):
-        st.session_state.db = load_data()
-        st.rerun()
-
-# ==================== TAB 5 ====================
-with tab5:
+elif st.session_state.current_page == "🎤 Mock Interview":
     st.session_state.brain["current_module"] = "Mock Interview"
     section_header("🎤", "Mock Interview", "Practice technical interviews and receive AI-powered feedback.", "#7A3F3F")
-    st.caption("Interview-format questions. Evaluated at the hiring bar.")
 
     db = st.session_state.db
     gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
@@ -922,30 +781,17 @@ with tab5:
     if weak_topics_mock:
         st.warning(f"⚠️ Recommended: Practice weak topics first — {', '.join(weak_topics_mock)}")
 
-    topics = ["Prefix Sum", "Sliding Window", "Contribution Technique",
-              "Bit Manipulation", "2D Matrices", "Strings"]
+    topics = ["Prefix Sum", "Sliding Window", "Contribution Technique", "Bit Manipulation", "2D Matrices", "Strings"]
 
     col1, col2 = st.columns(2)
-    with col1:
-        interview_topic = st.selectbox("Select topic:", topics, key="mock_topic_select")
-    with col2:
-        difficulty = st.selectbox("Difficulty:", ["Easy", "Medium", "Hard"], key="mock_diff_select")
+    with col1: interview_topic = st.selectbox("Select topic:", topics, key="mock_topic_select")
+    with col2: difficulty = st.selectbox("Difficulty:", ["Easy", "Medium", "Hard"], key="mock_diff_select")
 
     if st.button("Start Interview Question", key="start_interview"):
         st.session_state.brain["current_focus"] = interview_topic
         st.session_state.brain["last_activity"] = "Started a mock interview"
         with st.spinner("Preparing your interview question..."):
-            question_prompt = f"""You are a technical interviewer at a product company hiring for an 18-22 LPA role.
-
-Generate ONE interview question on: {interview_topic}
-Difficulty: {difficulty}
-
-Format exactly:
-QUESTION: [problem statement, clear and complete]
-WHAT WE'RE TESTING: [skill this evaluates]
-TIME LIMIT: [realistic time in minutes]
-WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cover]"""
-
+            question_prompt = f"You are a technical interviewer at a product company hiring for an 18-22 LPA role.\n\nGenerate ONE interview question on: {interview_topic}\nDifficulty: {difficulty}\n\nFormat exactly:\nQUESTION: [problem statement, clear and complete]\nWHAT WE'RE TESTING: [skill this evaluates]\nTIME LIMIT: [realistic time in minutes]\nWHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cover]"
             q_response = client.chat.completions.create(
                 model="llama-3.1-8b-instant",
                 messages=[
@@ -961,41 +807,16 @@ WHAT A STRONG ANSWER LOOKS LIKE: [2-3 bullets — no solution, just what to cove
         st.markdown("### Your Question")
         st.markdown(st.session_state.mock_question)
 
-        # Isolated component preventing page reruns on timer toggles
         mock_timer_component()
 
         st.markdown("### Your Answer")
-        st.caption("Think out loud. Explain approach first, then solution — exactly like a real interview.")
-
-        mock_answer = st.text_area(
-            "Your answer:",
-            height=250,
-            placeholder="Explain your thought process first, then your approach, then your solution...",
-            key="mock_answer"
-        )
+        mock_answer = st.text_area("Your answer:", height=250, placeholder="Explain your thought process first, then your approach, then your solution...", key="mock_answer")
 
         if st.button("Evaluate My Answer", key="eval_mock"):
-            if len(mock_answer.strip()) < 20:
-                st.warning("Write a real answer before evaluating.")
+            if len(mock_answer.strip()) < 20: st.warning("Write a real answer before evaluating.")
             else:
                 with st.spinner("Evaluating at the hiring bar..."):
-                    eval_prompt = f"""You are a senior engineer interviewing for an 18-22 LPA role.
-
-Question: {st.session_state.mock_question}
-Candidate's answer: {mock_answer}
-Topic: {st.session_state.mock_topic_val}
-Difficulty: {st.session_state.mock_difficulty_val}
-
-Evaluate at the actual hiring bar:
-1. COMMUNICATION: Did they explain thinking before jumping to code?
-2. APPROACH: Correct and logical?
-3. SOLUTION QUALITY: Correct, optimal, or flawed?
-4. WHAT IMPRESSED: Specific positives
-5. WHAT WOULD REJECT: Specific dealbreakers
-6. HIRING VERDICT: "Strong Hire", "Hire", or "No Hire" — one sentence reason
-7. WHAT TO SAY INSTEAD: Show exactly what a hired candidate would say for the weakest part"""
-
-                    # Upgraded to 70B parameter structural precision model
+                    eval_prompt = f"You are a senior engineer interviewing for an 18-22 LPA role.\n\nQuestion: {st.session_state.mock_question}\nCandidate's answer: {mock_answer}\nTopic: {st.session_state.mock_topic_val}\nDifficulty: {st.session_state.mock_difficulty_val}\n\nEvaluate at the actual hiring bar:\n1. COMMUNICATION: Did they explain thinking before jumping to code?\n2. APPROACH: Correct and logical?\n3. SOLUTION QUALITY: Correct, optimal, or flawed?\n4. WHAT IMPRESSED: Specific positives\n5. WHAT WOULD REJECT: Specific dealbreakers\n6. HIRING VERDICT: \"Strong Hire\", \"Hire\", or \"No Hire\" — one sentence reason\n7. WHAT TO SAY INSTEAD: Show exactly what a hired candidate would say for the weakest part"
                     eval_response = client.chat.completions.create(
                         model="llama-3.3-70b-specdec",
                         messages=[
@@ -1009,13 +830,11 @@ Evaluate at the actual hiring bar:
 
                     verdict = "No Hire"
                     if "Strong Hire" in evaluation:
-                        verdict = "Strong Hire"
-                        st.success("✅ Strong Hire.")
+                        verdict = "Strong Hire"; st.success("✅ Strong Hire.")
                     elif "No Hire" in evaluation:
                         st.error("❌ No Hire — Review this topic.")
                     else:
-                        verdict = "Hire"
-                        st.warning("🟡 Hire — Room for improvement.")
+                        verdict = "Hire"; st.warning("🟡 Hire — Room for improvement.")
 
                     st.session_state.db["gap_log"].append({
                         "type": "mock_entry",
