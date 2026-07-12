@@ -582,7 +582,7 @@ def update_recommended_topic():
 
         st.session_state.brain["recommended_topic"] = weakest["topic"]
 
-    else:
+     else:
 
         st.session_state.brain["recommended_topic"] = None
 
