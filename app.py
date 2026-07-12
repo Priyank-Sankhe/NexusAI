@@ -192,6 +192,24 @@ def save_data(data):
         st.error("Failed to queue background data sync.")
 
 # ==================== HELPERS ====================
+def save_database():
+    save_data(st.session_state.db)
+
+def save_brain():
+    save_data(st.session_state.db)
+
+def save_gap():
+    save_data(st.session_state.db)
+
+def save_mission():
+    save_data(st.session_state.db)
+
+def save_day_log():
+    save_data(st.session_state.db)
+
+def save_interview():
+    save_data(st.session_state.db)
+
 def get_weak_topics(gap_log):
     weak = []
     today = datetime.now().date()
@@ -379,7 +397,7 @@ if st.session_state.db["current_mission"] is None:
         st.session_state.db["current_mission"] = mission
         st.session_state.brain["current_focus"] = mission["title"]
         st.session_state.brain["recommended_action"] = "Start Mission"
-        save_data(st.session_state.db)
+        save_mission()
 
 mission = st.session_state.db.get("current_mission")
 if mission:
@@ -488,7 +506,7 @@ if st.session_state.current_page == "📊 Dashboard":
         if st.button("🚀 Start Current Mission", use_container_width=True):
             mission["status"] = MISSION_ACTIVE
             mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            save_data(st.session_state.db)
+            save_mission()
             st.rerun()
 
     # Current Mission Card
@@ -523,7 +541,7 @@ if st.session_state.current_page == "📊 Dashboard":
                     if st.button("▶ Start Mission", key="dash_start_mission", use_container_width=True):
                         mission["status"] = MISSION_ACTIVE
                         mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        save_data(st.session_state.db)
+                        save_mission()
                         st.rerun()
 
                 if mission["status"] == MISSION_ACTIVE:
@@ -532,7 +550,7 @@ if st.session_state.current_page == "📊 Dashboard":
                         mission["progress"] = 100
                         mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         st.session_state.db["current_mission"] = None
-                        save_data(st.session_state.db)
+                        save_mission()
                         st.rerun()
         else:
             st.info("No active mission yet. Solve problems in GapFinder to generate performance markers.")
@@ -713,7 +731,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
                         "score": score,
                         "evaluation": evaluation
                     })
-                    save_data(st.session_state.db)
+                    save_gap()
                     update_recommended_topic()
 
                     if score == 2: st.session_state.brain["current_focus"] = None
@@ -836,7 +854,7 @@ elif st.session_state.current_page == "⚡ FlowState":
 
                 brain["last_activity"] = "Started Focus Session"
 
-                save_data(st.session_state.db)
+                save_brain()
 
                 st.success("Focus session started.")
 
@@ -902,7 +920,7 @@ elif st.session_state.current_page == "⚡ FlowState":
 
                         )
 
-                save_data(st.session_state.db)
+                save_database()
 
                 stop_timer("focus_start", "focus_running")
 
@@ -1385,9 +1403,7 @@ Keep the feedback constructive but realistic.
 
                 })
 
-                save_data(
-                    st.session_state.db
-                )
+                save_day_log()
 
                 st.success(
                     "Day successfully logged."
@@ -1505,9 +1521,7 @@ Keep the feedback constructive but realistic.
                         new_mission
                     )
 
-                    save_data(
-                        st.session_state.db
-                    )
+                    save_mission()
 
                     st.success(
                         "New mission generated."
@@ -1519,9 +1533,7 @@ Keep the feedback constructive but realistic.
     # AUTO SAVE
     # ==========================================================
 
-    save_data(
-        st.session_state.db
-    )
+    save_database()
 
     # ==========================================================
     # FLOWSTATE FOOTER
@@ -2429,9 +2441,7 @@ Do not be generous.
 
                 update_recommended_topic()
 
-                save_data(
-                    st.session_state.db
-                )
+                save_interview()
 
                 st.success(
                     "Interview saved successfully."
@@ -2562,9 +2572,7 @@ Do not be generous.
 
     update_recommended_topic()
 
-    save_data(
-        st.session_state.db
-    )
+    save_database()
 
     st.divider()
 
