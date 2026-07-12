@@ -572,7 +572,7 @@ def update_recommended_topic():
         st.session_state.db["gap_log"]
      )
 
-    if weak_topics:
+     if weak_topics:
 
         weakest = sorted(
             weak_topics,
