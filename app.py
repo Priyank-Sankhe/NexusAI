@@ -508,8 +508,17 @@ with tab1:
         st.session_state.messages.append({"role": "user", "content": user_input})
         with st.chat_message("user"):
             st.write(user_input)
+    brain = st.session_state.brain
 
-        system_context = """You are NexusAI, a specialized software engineering study assistant.
+    brain_context = f"""
+    CURRENT AI STATE
+
+    Current Focus: {brain.get("current_focus")}
+    Recommended Topic: {brain.get("recommended_topic")}
+    Current Module: {brain.get("current_module")}
+    Last Activity: {brain.get("last_activity")}
+    """
+        system_context = brain_context + """You are NexusAI, a specialized software engineering study assistant.
 
 STUDENT PROFILE:
 - Name: Shivang
