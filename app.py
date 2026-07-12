@@ -368,22 +368,71 @@ with c:
 st.write("")
 
 # ==================== AI RECOMMENDATION ====================
+
 brain = st.session_state.brain
 
-if brain["current_focus"]:
-    recommendation = f"🎯 Continue working on **{brain['current_focus']}**."
+recommended_topic = brain.get("recommended_topic")
+
+if recommended_topic:
+
+    recommendation = (
+        f"🧠 NexusAI Recommendation\n\n"
+        f"Your highest priority right now is **{recommended_topic}**.\n"
+        f"Strengthen this topic before moving on."
+    )
+
+elif brain["current_focus"]:
+
+    recommendation = (
+        f"🎯 Continue working on **{brain['current_focus']}**."
+    )
+
 elif mission and mission["status"] == MISSION_PENDING:
-    recommendation = f"🚀 Start today's mission: **{mission['title']}**."
+
+    recommendation = (
+        f"🚀 Start today's mission: **{mission['title']}**."
+    )
+
 else:
-    recommendation = "💡 Generate a new GapFinder problem to keep improving."
+
+    recommendation = (
+        "💡 Generate a new GapFinder problem to keep improving."
+    )
 
 st.info(recommendation)
 
-if mission and mission["status"] == MISSION_PENDING:
-    if st.button("🚀 Start Current Mission", key="hero_start_mission", use_container_width=True):
+
+if recommended_topic:
+
+    if st.button(
+        f"🎯 Practice {recommended_topic}",
+        key="practice_recommended_topic",
+        use_container_width=True
+    ):
+
+        st.session_state.brain["current_focus"] = recommended_topic
+
+        st.success(
+            f"{recommended_topic} is now your active focus."
+        )
+
+        st.rerun()
+
+
+elif mission and mission["status"] == MISSION_PENDING:
+
+    if st.button(
+        "🚀 Start Current Mission",
+        key="hero_start_mission",
+        use_container_width=True
+    ):
+
         mission["status"] = MISSION_ACTIVE
+
         mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
         save_data(st.session_state.db)
+
         st.rerun()
 
 # ==================== CURRENT MISSION ====================
