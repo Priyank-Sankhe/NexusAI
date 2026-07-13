@@ -891,107 +891,173 @@ if st.session_state.current_page == "📊 Dashboard":
     st.write("")
 
 
-    # SECTION 4: Learning Analytics (Fixed structural containment via unified HTML block)
-    st.markdown('<div class="section-title">📊 Intelligence Framework Matrix</div>', unsafe_allow_html=True)
+    # SECTION 4: Intelligence Framework Matrix
+    st.markdown('<div class="section-title" style="margin-top: 2rem; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; color: #ffffff;">📊 Intelligence Framework Matrix</div>', unsafe_allow_html=True)
     
-    ana_col1, ana_col2 = st.columns(2)
-    
-    with ana_col1:
-        db = st.session_state.db
-        gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
-        day_logs = db["day_logs"]
-        weak_entries = [e for e in gap_log if e.get("score", 0) <= 1]
+    db = st.session_state.db
+    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
+    day_logs = db["day_logs"]
+    weak_entries = [e for e in gap_log if e.get("score", 0) <= 1]
 
-        html_gaps = '<div class="analytics-card" style="height: 100%; min-height: 320px; box-sizing: border-box;">'
-        html_gaps += '<h4 style="margin-top: 0; margin-bottom: 1rem; color: #ffffff;">⚠️ Tracked Gaps & Retest Windows</h4>'
+    # Pre-compute topic scores and weak metrics
+    topic_scores = {}
+    for e in gap_log:
+        topic = e["topic"]
+        if topic not in topic_scores:
+            topic_scores[topic] = []
+        topic_scores[topic].append(e.get("score", 0))
+
+    topic_data = {}
+    for e in weak_entries:
+        topic = e["topic"]
+        if topic not in topic_data:
+            topic_data[topic] = {"attempts": 0, "last_attempt": e["date"]}
+        topic_data[topic]["attempts"] += 1
+        if e["date"] > topic_data[topic]["last_attempt"]:
+            topic_data[topic]["last_attempt"] = e["date"]
+
+    # --- GRID ROW 1: Top Left & Top Right ---
+    row1_col1, row1_col2 = st.columns(2)
+    
+    with row1_col1:
+        # TOP LEFT: Weak Topics
+        html_weak = '<div class="analytics-card" style="height: 100%; min-height: 320px; box-sizing: border-box; padding: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 1.5rem;">'
+        html_weak += '<h4 style="margin-top: 0; margin-bottom: 1.25rem; color: #ffffff; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">🎯 Weak Topics</h4>'
         
         if weak_entries:
-            topic_data = {}
-            for e in weak_entries:
-                topic = e["topic"]
-                if topic not in topic_data:
-                    topic_data[topic] = {"attempts": 0, "last_attempt": e["date"]}
-                topic_data[topic]["attempts"] += 1
-                if e["date"] > topic_data[topic]["last_attempt"]:
-                    topic_data[topic]["last_attempt"] = e["date"]
-
-            for topic, data in topic_data.items():
-                days_since = (datetime.now().date() - datetime.strptime(data["last_attempt"], "%Y-%m-%d").date()).days
-                if days_since >= 7:
-                    indicator = '<span style="color: #ef4444; font-weight: 600;">🔴 Due now</span>'
+            # Sort topics by attempt count descending and take top 5
+            sorted_weak = sorted(topic_data.items(), key=lambda x: x[1]["attempts"], reverse=True)[:5]
+            for topic, data in sorted_weak:
+                avg_score = sum(topic_scores[topic]) / len(topic_scores[topic])
+                if avg_score <= 0.5:
+                    status_badge = '<span class="status-chip" style="background: rgba(220, 38, 38, 0.15); color: #ef4444; border-color: rgba(220, 38, 38, 0.3); margin: 0;">Critical</span>'
+                elif avg_score < 1.0:
+                    status_badge = '<span class="status-chip" style="background: rgba(217, 119, 6, 0.15); color: #f59e0b; border-color: rgba(217, 119, 6, 0.3); margin: 0;">Improving</span>'
                 else:
-                    indicator = f'<span style="color: #f59e0b; font-weight: 500;">🟡 In {7 - days_since} days</span>'
+                    status_badge = '<span class="status-chip" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); margin: 0;">Stable</span>'
                 
-                html_gaps += f"""
-                <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid rgba(255,255,255,0.04);">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <span style="font-weight: 500; color: #f5f1ec;">{topic}</span>
-                        {indicator}
+                html_weak += f"""
+                <div style="padding: 0.85rem 1rem; background: rgba(255,255,255,0.015); border-radius: 8px; margin-bottom: 0.6rem; border: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: #f5f1ec; font-size: 0.95rem;">{topic}</div>
+                        <div style="font-size: 0.8rem; color: #a8a29e; margin-top: 0.2rem;">{data['attempts']} weak attempt(s)</div>
                     </div>
-                    <div style="font-size: 0.8rem; color: #a8a29e; margin-top: 0.25rem;">
-                        {data['attempts']} weak attempt(s) — Last tracked: {data['last_attempt']}
-                    </div>
+                    <div>{status_badge}</div>
                 </div>
                 """
         else:
-            html_gaps += '<p style="color: #a8a29e; font-size: 0.9rem;">No weak metrics flagged yet.</p>'
-        
-        html_gaps += '</div>'
-        st.markdown(html_gaps, unsafe_allow_html=True)
+            html_weak += """
+            <div style="text-align: center; padding: 3rem 1rem; color: #a8a29e;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">✨</div>
+                <div style="font-size: 0.95rem; font-weight: 500; color: #ffffff;">No Weak Topics Tracked</div>
+                <div style="font-size: 0.85rem; margin-top: 0.25rem;">All your recent practice scores are optimal.</div>
+            </div>
+            """
+        html_weak += '</div>'
+        st.markdown(html_weak, unsafe_allow_html=True)
 
-    with ana_col2:
-        html_matrix = '<div class="analytics-card" style="height: 100%; min-height: 320px; box-sizing: border-box;">'
-        html_matrix += '<h4 style="margin-top: 0; margin-bottom: 1rem; color: #ffffff;">📈 Analytics Matrix</h4>'
+    with row1_col2:
+        # TOP RIGHT: Learning Analytics
+        html_matrix = '<div class="analytics-card" style="height: 100%; min-height: 320px; box-sizing: border-box; padding: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 1.5rem;">'
+        html_matrix += '<h4 style="margin-top: 0; margin-bottom: 1.25rem; color: #ffffff; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">📈 Learning Analytics</h4>'
         
         if gap_log:
-            topic_scores = {}
-            for e in gap_log:
-                topic = e["topic"]
-                if topic not in topic_scores: topic_scores[topic] = []
-                topic_scores[topic].append(e.get("score", 0))
-
+            html_matrix += '<div style="display: grid; grid-template-columns: 1fr; gap: 0.6rem;">'
             for topic, scores in topic_scores.items():
                 avg = sum(scores) / len(scores)
                 bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
                 
                 html_matrix += f"""
-                <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <span style="margin-right: 0.5rem;">{bar}</span>
-                        <span style="font-weight: 500; color: #f5f1ec;">{topic}</span>
-                        <span style="font-size: 0.8rem; color: #a8a29e; margin-left: 0.5rem;">({len(scores)} attempts)</span>
+                <div style="padding: 0.85rem 1rem; background: rgba(255,255,255,0.015); border-radius: 8px; border: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 0.65rem;">
+                        <span style="font-size: 1.1rem;">{bar}</span>
+                        <div>
+                            <div style="font-weight: 600; color: #f5f1ec; font-size: 0.95rem;">{topic}</div>
+                            <div style="font-size: 0.75rem; color: #a8a29e; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.15rem;">{len(scores)} Total Attempts</div>
+                        </div>
                     </div>
-                    <div style="font-weight: 600; color: #ffffff;">{avg:.1f} <span style="font-weight: 400; color: #a8a29e; font-size: 0.85rem;">/ 2</span></div>
+                    <div style="text-align: right;">
+                        <div style="font-size: 1.15rem; font-weight: 700; color: #ffffff;">{avg:.1f} <span style="font-weight: 400; color: #a8a29e; font-size: 0.85rem;">/ 2.0</span></div>
+                        <div style="font-size: 0.75rem; color: #a8a29e;">Avg Score</div>
+                    </div>
                 </div>
                 """
+            html_matrix += '</div>'
         else:
-            html_matrix += '<p style="color: #a8a29e; font-size: 0.9rem;">No metrics tracked yet. Practice code concepts via side modules to populate charts.</p>'
-        
+            html_matrix += """
+            <div style="text-align: center; padding: 3rem 1rem; color: #a8a29e;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                <div style="font-size: 0.95rem; font-weight: 500; color: #ffffff;">No Analytics Available</div>
+                <div style="font-size: 0.85rem; margin-top: 0.25rem;">Practice code concepts via side modules to populate KPIs.</div>
+            </div>
+            """
         html_matrix += '</div>'
         st.markdown(html_matrix, unsafe_allow_html=True)
 
-    st.write("")
+    # --- GRID ROW 2: Bottom Left & Bottom Right ---
+    row2_col1, row2_col2 = st.columns(2)
 
-    # SECTION 5: Activity Timeline
-    st.markdown('<div class="section-title">🌙 Archived Day Logs</div>', unsafe_allow_html=True)
-    
-    if day_logs:
-        for log in reversed(day_logs[-5:]):
-            st.markdown(f"""
-            <div class="timeline-card">
-                <div style="font-weight: 600; color: #ffffff; font-size: 0.95rem; margin-bottom: 0.5rem;">{log['date']}</div>
-                <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 6px; padding: 0.75rem; font-size: 0.9rem; color: #d6ccc2;">
-                    <div style="margin-bottom: 0.25rem;"><strong>Completed:</strong> {log['completed']}</div>
-                    <div><strong>Review:</strong> {log['review']}</div>
+    with row2_col1:
+        # BOTTOM LEFT: Retest Queue
+        html_queue = '<div class="analytics-card" style="height: 100%; min-height: 320px; box-sizing: border-box; padding: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 1.5rem;">'
+        html_queue += '<h4 style="margin-top: 0; margin-bottom: 1.25rem; color: #ffffff; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">⏰ Retest Queue</h4>'
+        
+        if topic_data:
+            for topic, data in topic_data.items():
+                days_since = (datetime.now().date() - datetime.strptime(data["last_attempt"], "%Y-%m-%d").date()).days
+                if days_since >= 7:
+                    badge = '<span class="status-chip" style="background: rgba(220, 38, 38, 0.15); color: #ef4444; border-color: rgba(220, 38, 38, 0.3); margin: 0;">🔴 Due Now</span>'
+                    subtext = f"Overdue by {days_since - 7} day(s)" if days_since > 7 else "Scheduled for today"
+                else:
+                    badge = f'<span class="status-chip" style="background: rgba(217, 119, 6, 0.15); color: #f59e0b; border-color: rgba(217, 119, 6, 0.3); margin: 0;">🟡 In {7 - days_since} days</span>'
+                    subtext = f"Last practiced {days_since} day(s) ago"
+                
+                html_queue += f"""
+                <div style="padding: 0.85rem 1rem; background: rgba(255,255,255,0.015); border-radius: 8px; margin-bottom: 0.6rem; border: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; color: #f5f1ec; font-size: 0.95rem;">{topic}</div>
+                        <div style="font-size: 0.8rem; color: #a8a29e; margin-top: 0.2rem;">{subtext}</div>
+                    </div>
+                    <div>{badge}</div>
                 </div>
+                """
+        else:
+            html_queue += """
+            <div style="text-align: center; padding: 3rem 1rem; color: #a8a29e;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">⏳</div>
+                <div style="font-size: 0.95rem; font-weight: 500; color: #ffffff;">Queue is Empty</div>
+                <div style="font-size: 0.85rem; margin-top: 0.25rem;">No topics are currently scheduled for retesting.</div>
             </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.markdown("""
-        <div class="glass-card" style="padding: 1.5rem; text-align: center; color: #a8a29e; font-size: 0.9rem;">
-            No study intervals closed yet.
-        </div>
-        """, unsafe_allow_html=True)
+            """
+        html_queue += '</div>'
+        st.markdown(html_queue, unsafe_allow_html=True)
+
+    with row2_col2:
+        # BOTTOM RIGHT: Recent Study Sessions
+        html_sessions = '<div class="analytics-card" style="height: 100%; min-height: 320px; box-sizing: border-box; padding: 1.5rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 1.5rem;">'
+        html_sessions += '<h4 style="margin-top: 0; margin-bottom: 1.25rem; color: #ffffff; font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">📅 Recent Study Sessions</h4>'
+        
+        if day_logs:
+            for log in reversed(day_logs[-5:]):
+                html_sessions += f"""
+                <div style="padding: 0.85rem 1rem; background: rgba(255,255,255,0.015); border-radius: 8px; margin-bottom: 0.6rem; border: 1px solid rgba(255,255,255,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.35rem;">
+                        <span style="font-weight: 600; color: #ffffff; font-size: 0.95rem;">{log['completed']}</span>
+                        <span style="font-size: 0.75rem; color: #a8a29e; background: rgba(255,255,255,0.03); padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap;">{log['date']}</span>
+                    </div>
+                    <div style="font-size: 0.85rem; color: #a8a29e; line-height: 1.4;">{log['review']}</div>
+                </div>
+                """
+        else:
+            html_sessions += """
+            <div style="text-align: center; padding: 3rem 1rem; color: #a8a29e;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📖</div>
+                <div style="font-size: 0.95rem; font-weight: 500; color: #ffffff;">No Study Logs Found</div>
+                <div style="font-size: 0.85rem; margin-top: 0.25rem;">Your completed study intervals will appear here.</div>
+            </div>
+            """
+        html_sessions += '</div>'
+        st.markdown(html_sessions, unsafe_allow_html=True)
 
     st.write("")
 
