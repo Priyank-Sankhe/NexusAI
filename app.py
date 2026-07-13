@@ -836,67 +836,42 @@ if st.session_state.current_page == "📊 Dashboard":
             total_seconds = mission["duration"] * 60
             mission["progress"] = get_progress(elapsed_seconds, total_seconds)
 
-        m_col_left, m_col_center, m_col_right = st.columns(3)
-        
-        with m_col_left:
-            st.markdown(f"""
-            <div class="analytics-card" style="height: 100%; min-height: 220px; box-sizing: border-box;">
-                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #ffffff;">{mission["title"]}</h3>
-                <p style="color: #a8a29e; margin: 0 0 1.25rem 0; font-size: 0.9rem; line-height: 1.5;">{mission["reason"]}</p>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        # Simplified Single Premium Glass Card
+        st.markdown(f"""
+        <div class="glass-card" style="padding: 1.75rem; margin-bottom: 1.5rem; border: 1px solid rgba(255, 255, 255, 0.05); background: rgba(255, 255, 255, 0.02); border-radius: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                <h3 style="margin: 0; font-size: 1.35rem; font-weight: 700; color: #ffffff;">{mission["title"]}</h3>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
                     {p_chip}
-                    <span class="status-chip">{mission["status"].title()}</span>
+                    <span class="status-chip" style="margin: 0;">{mission["status"].title()}</span>
                 </div>
             </div>
-            """, unsafe_allow_html=True)
-            
-        with m_col_center:
-            started_text = f"Started: {mission['started_at']}" if mission.get("started_at") else "Pending start"
-            st.markdown(f"""
-            <div class="analytics-card" style="height: 100%; min-height: 220px; box-sizing: border-box;">
-                <div style="text-align: center; margin-bottom: 0.75rem;">
-                    <div style="font-size: 3rem; font-weight: 700; color: #ffffff; line-height: 1;">{mission["progress"]}%</div>
-                </div>
-            """, unsafe_allow_html=True)
-            
-            st.progress(mission["progress"] / 100)
-            
-            st.markdown(f"""
-                <div style="display: flex; justify-content: space-between; margin-top: 1.25rem; font-size: 0.85rem; color: #a8a29e; font-weight: 500;">
-                    <span>⏱️ {mission["duration"]} Min</span>
-                    <span>{started_text}</span>
-                </div>
+            <p style="color: #a8a29e; margin: 0 0 1.25rem 0; font-size: 0.95rem; line-height: 1.6;">{mission["reason"]}</p>
+            <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #a8a29e; font-weight: 500; margin-bottom: 1.5rem; padding-bottom: 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                <span>⏱️ Duration: <strong style="color: #ffffff;">{mission["duration"]} Minutes</strong></span>
             </div>
-            """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+        
+        # Full-Width Action Button Inside Card
+        if mission["status"] == MISSION_PENDING:
+            if st.button("▶ Start Mission", key="dash_start_mission", use_container_width=True):
+                mission["status"] = MISSION_ACTIVE
+                mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                save_mission()
+                st.rerun()
+        elif mission["status"] == MISSION_ACTIVE:
+            if st.button("✅ Complete Mission", key="dash_complete_mission", use_container_width=True):
+                mission["status"] = MISSION_COMPLETED
+                mission["progress"] = 100
+                mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                st.session_state.db["current_mission"] = None
+                save_mission()
+                st.rerun()
+        else:
+            st.button("✅ Completed", key="dash_mission_done", disabled=True, use_container_width=True)
             
-        with m_col_right:
-            st.markdown('<div class="analytics-card" style="height: 100%; min-height: 220px; box-sizing: border-box;">', unsafe_allow_html=True)
-            
-            if mission["status"] == MISSION_PENDING:
-                if st.button("▶ Start Mission", key="dash_start_mission", use_container_width=True):
-                    mission["status"] = MISSION_ACTIVE
-                    mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    save_mission()
-                    st.rerun()
-            elif mission["status"] == MISSION_ACTIVE:
-                if st.button("✅ Complete Mission", key="dash_complete_mission", use_container_width=True):
-                    mission["status"] = MISSION_COMPLETED
-                    mission["progress"] = 100
-                    mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    st.session_state.db["current_mission"] = None
-                    save_mission()
-                    st.rerun()
-            else:
-                st.button("✅ Completed", key="dash_mission_done", disabled=True, use_container_width=True)
-                
-            st.markdown(f"""
-                <div class="metric-card" style="margin-top: 1.5rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2);">
-                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600; margin-bottom: 0.35rem;">Mission Summary</div>
-                    <div style="font-size: 0.9rem; color: #f5f1ec; line-height: 1.4;">Target focus duration of <strong>{mission["duration"]} minutes</strong> to stabilize weak metrics.</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
+        st.markdown('</div>', unsafe_allow_html=True)
+        
     else:
         st.markdown("""
         <div class="glass-card" style="padding: 4rem 2rem; text-align: center; border: 1px dashed rgba(255,255,255,0.15);">
