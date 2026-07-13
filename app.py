@@ -916,7 +916,7 @@ if st.session_state.current_page == "📊 Dashboard":
         </div>
         """, unsafe_allow_html=True)
         if st.button("Resume FlowState", key="qa_resume_flow", use_container_width=True):
-            set_page("⏱️ FlowState")
+            set_page("⚡ FlowState")
             st.rerun()
 
     with qa_col4:
@@ -927,10 +927,8 @@ if st.session_state.current_page == "📊 Dashboard":
         </div>
         """, unsafe_allow_html=True)
         if st.button("Start Mock Interview", key="qa_start_interview", use_container_width=True):
-            set_page("👔 Mock Interview")
+            set_page("🎤 Mock Interview")
             st.rerun()
-
-
 
 elif st.session_state.current_page == "💬 Study Chat":
     st.session_state.brain["current_module"] = "Study Chat"
