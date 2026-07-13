@@ -1318,7 +1318,6 @@ SCOPE: Only answer questions about software engineering, DSA, Java, Python, syst
 
 elif st.session_state.current_page == "🎯 GapFinder":
     st.session_state.brain["current_module"] = "GapFinder"
-    section_header("🎯", "GapFinder", "Identify weak concepts and automatically generate targeted practice.", "#7A5636")
 
     weak_topics = get_weak_topics(st.session_state.db["gap_log"])
     weak_topic_names = list(set([w['topic'] for w in weak_topics])) if weak_topics else []
@@ -1398,7 +1397,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
         
     st.write("")
     
-    generate_btn = st.button("Generate Problem", key="gapfinder_generate_btn", use_container_width=True)
+    
         
     st.markdown('</div>', unsafe_allow_html=True)
 
