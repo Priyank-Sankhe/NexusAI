@@ -1068,11 +1068,11 @@ if st.session_state.current_page == "📊 Dashboard":
     
     with qa_col1:
         st.markdown("""
-        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
-            <div>
+        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; height: 200px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1;">💬</div>
                 <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.35rem;">Study Chat</div>
-                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem;">AI-powered interactive learning tutor.</div>
+                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem; min-height: 36px; display: flex; align-items: center; justify-content: center;">AI-powered interactive learning tutor.</div>
             </div>
             <div>
                 <span class="status-chip" style="background: rgba(13, 148, 136, 0.15); color: #14b8a6; border-color: rgba(13, 148, 136, 0.3); margin: 0; font-size: 0.75rem;">Ready</span>
@@ -1085,11 +1085,11 @@ if st.session_state.current_page == "📊 Dashboard":
 
     with qa_col2:
         st.markdown("""
-        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
-            <div>
+        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; height: 200px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1;">🎯</div>
                 <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.35rem;">GapFinder</div>
-                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem;">Diagnose and repair knowledge gaps.</div>
+                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem; min-height: 36px; display: flex; align-items: center; justify-content: center;">Diagnose and repair knowledge gaps.</div>
             </div>
             <div>
                 <span class="status-chip" style="background: rgba(217, 119, 6, 0.15); color: #f59e0b; border-color: rgba(217, 119, 6, 0.3); margin: 0; font-size: 0.75rem;">Practice</span>
@@ -1104,11 +1104,11 @@ if st.session_state.current_page == "📊 Dashboard":
 
     with qa_col3:
         st.markdown("""
-        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
-            <div>
+        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; height: 200px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1;">⚡</div>
                 <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.35rem;">FlowState</div>
-                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem;">Deep focus timer & study ambient.</div>
+                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem; min-height: 36px; display: flex; align-items: center; justify-content: center;">Deep focus timer & study ambient.</div>
             </div>
             <div>
                 <span class="status-chip" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); margin: 0; font-size: 0.75rem;">Focus</span>
@@ -1121,11 +1121,11 @@ if st.session_state.current_page == "📊 Dashboard":
 
     with qa_col4:
         st.markdown("""
-        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
-            <div>
+        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; height: 200px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
+            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%;">
                 <div style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1;">🎤</div>
                 <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.35rem;">Mock Interview</div>
-                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem;">Simulate technical & behavior rounds.</div>
+                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem; min-height: 36px; display: flex; align-items: center; justify-content: center;">Simulate technical & behavior rounds.</div>
             </div>
             <div>
                 <span class="status-chip" style="background: rgba(220, 38, 38, 0.15); color: #ef4444; border-color: rgba(220, 38, 38, 0.3); margin: 0; font-size: 0.75rem;">Interview</span>
