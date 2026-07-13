@@ -1397,12 +1397,6 @@ elif st.session_state.current_page == "🎯 GapFinder":
         
     st.write("")
     
-    if st.button("Generate Problem", key="gen_problem", use_container_width=True):
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    if generate_btn:
-        pass # <-- Insert the existing generation logic here
 
     if st.button("Generate Problem", key="gen_problem", use_container_width=True):
         st.session_state.brain["current_focus"] = selected_topic
