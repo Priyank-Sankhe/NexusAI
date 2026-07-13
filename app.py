@@ -748,7 +748,6 @@ if st.session_state.current_page == "📊 Dashboard":
         </div>
         """, unsafe_allow_html=True)
         
-        # Action execution parameters inside the container
         m_action_left, m_action_right = st.columns([3, 1])
         with m_action_left:
             st.progress(mission["progress"] / 100)
@@ -776,20 +775,20 @@ if st.session_state.current_page == "📊 Dashboard":
 
     st.write("")
 
-    # SECTION 4: Learning Analytics
+    # SECTION 4: Learning Analytics (Fixed structural containment via unified HTML block)
     st.markdown('<div class="section-title">📊 Intelligence Framework Matrix</div>', unsafe_allow_html=True)
     
     ana_col1, ana_col2 = st.columns(2)
     
     with ana_col1:
-        st.markdown('<div class="analytics-card" style="height: 100%;">', unsafe_allow_html=True)
-        st.markdown('<h4 style="margin-top: 0; margin-bottom: 1rem; color: #ffffff;">⚠️ Tracked Gaps & Retest Windows</h4>', unsafe_allow_html=True)
-        
         db = st.session_state.db
         gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
         day_logs = db["day_logs"]
         weak_entries = [e for e in gap_log if e.get("score", 0) <= 1]
 
+        html_gaps = '<div class="analytics-card" style="height: 100%; min-height: 320px; box-sizing: border-box;">'
+        html_gaps += '<h4 style="margin-top: 0; margin-bottom: 1rem; color: #ffffff;">⚠️ Tracked Gaps & Retest Windows</h4>'
+        
         if weak_entries:
             topic_data = {}
             for e in weak_entries:
@@ -807,7 +806,7 @@ if st.session_state.current_page == "📊 Dashboard":
                 else:
                     indicator = f'<span style="color: #f59e0b; font-weight: 500;">🟡 In {7 - days_since} days</span>'
                 
-                st.markdown(f"""
+                html_gaps += f"""
                 <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid rgba(255,255,255,0.04);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                         <span style="font-weight: 500; color: #f5f1ec;">{topic}</span>
@@ -817,14 +816,16 @@ if st.session_state.current_page == "📊 Dashboard":
                         {data['attempts']} weak attempt(s) — Last tracked: {data['last_attempt']}
                     </div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
         else:
-            st.markdown('<p style="color: #a8a29e; font-size: 0.9rem;">No weak metrics flagged yet.</p>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            html_gaps += '<p style="color: #a8a29e; font-size: 0.9rem;">No weak metrics flagged yet.</p>'
+        
+        html_gaps += '</div>'
+        st.markdown(html_gaps, unsafe_allow_html=True)
 
     with ana_col2:
-        st.markdown('<div class="analytics-card" style="height: 100%;">', unsafe_allow_html=True)
-        st.markdown('<h4 style="margin-top: 0; margin-bottom: 1rem; color: #ffffff;">📈 Analytics Matrix</h4>', unsafe_allow_html=True)
+        html_matrix = '<div class="analytics-card" style="height: 100%; min-height: 320px; box-sizing: border-box;">'
+        html_matrix += '<h4 style="margin-top: 0; margin-bottom: 1rem; color: #ffffff;">📈 Analytics Matrix</h4>'
         
         if gap_log:
             topic_scores = {}
@@ -837,7 +838,7 @@ if st.session_state.current_page == "📊 Dashboard":
                 avg = sum(scores) / len(scores)
                 bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
                 
-                st.markdown(f"""
+                html_matrix += f"""
                 <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center;">
                     <div>
                         <span style="margin-right: 0.5rem;">{bar}</span>
@@ -846,10 +847,12 @@ if st.session_state.current_page == "📊 Dashboard":
                     </div>
                     <div style="font-weight: 600; color: #ffffff;">{avg:.1f} <span style="font-weight: 400; color: #a8a29e; font-size: 0.85rem;">/ 2</span></div>
                 </div>
-                """, unsafe_allow_html=True)
+                """
         else:
-            st.markdown('<p style="color: #a8a29e; font-size: 0.9rem;">No metrics tracked yet. Practice code concepts via side modules to populate charts.</p>', unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+            html_matrix += '<p style="color: #a8a29e; font-size: 0.9rem;">No metrics tracked yet. Practice code concepts via side modules to populate charts.</p>'
+        
+        html_matrix += '</div>'
+        st.markdown(html_matrix, unsafe_allow_html=True)
 
     st.write("")
 
