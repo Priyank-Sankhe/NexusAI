@@ -13,7 +13,9 @@ st.markdown("""
 
 #MainMenu {visibility:hidden;}
 footer {visibility:hidden;}
-header {visibility:hidden;}
+header {
+    background: transparent !important;
+}
 
 .stApp {
     background-color: #0c0907;
