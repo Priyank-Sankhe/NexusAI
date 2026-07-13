@@ -648,7 +648,6 @@ if st.session_state.current_page == "📊 Dashboard":
     
     with h_col1:
         st.markdown(f"""
-        <div style="font-size: 0.85rem; font-weight: 600; color: #b77a48; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.5rem;">🧠 NEXUS AI COMMAND CENTER</div>
         <h1 style="margin: 0 0 0.25rem 0; font-size: 2.25rem; font-weight: 700; color: #ffffff;">{greeting}</h1>
         <p style="color: #a8a29e; font-size: 1.05rem; margin: 0 0 1.5rem 0;">Ready to continue your Software Engineering journey?</p>
         
@@ -680,16 +679,32 @@ if st.session_state.current_page == "📊 Dashboard":
                 </div>
             </div>
         """, unsafe_allow_html=True)
+        
         st.progress(progress_val / 100)
+        
         st.markdown(f"""
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05); margin-bottom: 1.25rem;">
                 <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600;">Recommended Topic</span>
                 <span class="status-chip" style="background: rgba(183, 122, 72, 0.15); color: #d9985c; border-color: rgba(183, 122, 72, 0.3); margin: 0;">{recommended_topic if recommended_topic else "Optimal"}</span>
             </div>
-        </div>
         """, unsafe_allow_html=True)
         
-    st.markdown('</div>', unsafe_allow_html=True)
+        # Routing Action Button (now inside the card)
+        if recommended_topic:
+            if st.button(f"🎯 Route to GapFinder to Practice {recommended_topic}", key="hero_route_gap", use_container_width=True):
+                st.session_state.brain["current_focus"] = recommended_topic
+                set_page("🎯 GapFinder")
+                st.rerun()
+        elif mission and mission["status"] == MISSION_PENDING:
+            if st.button("🚀 Start Current Mission", key="hero_start_mission", use_container_width=True):
+                mission["status"] = MISSION_ACTIVE
+                mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                save_mission()
+                st.rerun()
+                
+        st.markdown('</div>', unsafe_allow_html=True) # Closes inner right-side card
+        
+    st.markdown('</div>', unsafe_allow_html=True) # Closes outer hero-card
 
     # BOTTOM ROW: Four Premium Mini Information Cards
     b_col1, b_col2, b_col3, b_col4 = st.columns(4)
@@ -727,19 +742,6 @@ if st.session_state.current_page == "📊 Dashboard":
         """, unsafe_allow_html=True)
         
     st.write("")
-
-    # Routing Action from Hero Recommendation
-    if recommended_topic:
-        if st.button(f"🎯 Route to GapFinder to Practice {recommended_topic}", key="hero_route_gap", use_container_width=True):
-            st.session_state.brain["current_focus"] = recommended_topic
-            set_page("🎯 GapFinder")
-            st.rerun()
-    elif mission and mission["status"] == MISSION_PENDING:
-        if st.button("🚀 Start Current Mission", key="hero_start_mission", use_container_width=True):
-            mission["status"] = MISSION_ACTIVE
-            mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            save_mission()
-            st.rerun()
 
     # SECTION 2: Premium KPI Cards
     st.write("")
