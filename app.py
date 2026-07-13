@@ -1399,7 +1399,7 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 
     # GLASS WORKSPACE CARD
-    st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
+st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
     
     ws_col_left, ws_col_right = st.columns([1, 1])
     
