@@ -776,42 +776,97 @@ if st.session_state.current_page == "📊 Dashboard":
     st.write("")
     
 
-    # SECTION 2: Premium KPI Cards
+    # SECTION 2: Live Intelligence Metrics
     st.write("")
+    
+    # Pre-compute metric states and logic
+    prob_caption = "Start solving problems" if problem_count == 0 else "Growing steadily"
+    day_caption = "No sessions yet" if day_count == 0 else "Building Habit"
+    
+    if weak_count == 0:
+        health_text = "Excellent"
+        health_color = "#10b981"
+        health_icon = "🟢"
+    elif weak_count <= 2:
+        health_text = "Stable"
+        health_color = "#f59e0b"
+        health_icon = "🟡"
+    else:
+        health_text = "Needs Attention"
+        health_color = "#ef4444"
+        health_icon = "🔴"
+
+    confidence = max(0, min(100, problem_count * 8 + day_count * 6 - weak_count * 5))
+    if confidence >= 75:
+        conf_label = "Strong"
+        conf_color = "#10b981"
+    elif confidence >= 50:
+        conf_label = "Improving"
+        conf_color = "#3b82f6"
+    elif confidence >= 25:
+        conf_label = "Learning"
+        conf_color = "#f59e0b"
+    else:
+        conf_label = "Beginner"
+        conf_color = "#a8a29e"
+
     m_col1, m_col2, m_col3, m_col4 = st.columns(4)
     
     with m_col1:
         st.markdown(f"""
-        <div class="metric-card">
-            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">Problems Solved</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">{problem_count}</div>
+        <div class="glass-card" style="padding: 1.25rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; height: 140px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600;">Problems Solved</span>
+                <span style="font-size: 1rem;">📚</span>
+            </div>
+            <div style="font-size: 1.85rem; font-weight: 700; color: #ffffff; line-height: 1;">{problem_count}</div>
+            <div style="font-size: 0.8rem; color: #a8a29e; font-weight: 500;">{prob_caption}</div>
         </div>
         """, unsafe_allow_html=True)
         
     with m_col2:
         st.markdown(f"""
-        <div class="metric-card">
-            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #d9985c; font-weight: 500;">Weak Topics</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: #d9985c; margin-top: 0.25rem;">{weak_count}</div>
+        <div class="glass-card" style="padding: 1.25rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; height: 140px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600;">Knowledge Health</span>
+                <span style="font-size: 1rem;">🎯</span>
+            </div>
+            <div style="font-size: 1.4rem; font-weight: 700; color: {health_color}; line-height: 1.2; display: flex; align-items: center; gap: 0.4rem;">
+                <span style="font-size: 0.9rem;">{health_icon}</span> {health_text}
+            </div>
+            <div style="font-size: 0.8rem; color: #a8a29e; font-weight: 500;">{weak_count} weak topic(s) logged</div>
         </div>
         """, unsafe_allow_html=True)
         
     with m_col3:
         st.markdown(f"""
-        <div class="metric-card">
-            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">Study Days</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">{day_count}</div>
+        <div class="glass-card" style="padding: 1.25rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; height: 140px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600;">Study Consistency</span>
+                <span style="font-size: 1rem;">📅</span>
+            </div>
+            <div style="font-size: 1.85rem; font-weight: 700; color: #ffffff; line-height: 1;">{day_count} <span style="font-size: 0.9rem; font-weight: 500; color: #a8a29e;">days</span></div>
+            <div style="font-size: 0.8rem; color: #a8a29e; font-weight: 500;">{day_caption}</div>
         </div>
         """, unsafe_allow_html=True)
         
     with m_col4:
-        status_string = mission["status"].title() if mission else "None"
         st.markdown(f"""
-        <div class="metric-card">
-            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">Mission Status</div>
-            <div style="font-size: 1.75rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">{status_string}</div>
+        <div class="glass-card" style="padding: 1.25rem 1rem; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; height: 140px; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600;">AI Confidence</span>
+                <span style="font-size: 1rem;">⚡</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                <div style="font-size: 1.85rem; font-weight: 700; color: #ffffff; line-height: 1;">{confidence}%</div>
+                <div style="font-size: 0.8rem; font-weight: 600; color: {conf_color};">{conf_label}</div>
+            </div>
+            <div style="width: 100%; background: rgba(255,255,255,0.1); height: 6px; border-radius: 3px; overflow: hidden; margin-top: 0.2rem;">
+                <div style="width: {confidence}%; background: {conf_color}; height: 100%; border-radius: 3px; transition: width 0.5s ease;"></div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
+        
     st.write("")
 
     # SECTION 3: Mission Intelligence
