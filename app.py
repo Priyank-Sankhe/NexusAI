@@ -641,8 +641,40 @@ if st.session_state.current_page == "📊 Dashboard":
     mission_status = mission["status"].title() if mission else "None"
     current_focus_val = brain.get("current_focus") if brain.get("current_focus") else "None"
 
+    # Command Bar UI Variables
+    cmd_current_module = st.session_state.current_page
+    cmd_current_time = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M IST")
+    
+    cmd_status_map = {
+        "Dashboard": "Monitoring",
+        "GapFinder": "Gap Analysis",
+        "Study Chat": "Assistant Ready",
+        "FlowState": "Deep Focus",
+        "Mock Interview": "Interview Mode"
+    }
+    cmd_ai_status = "Active"
+    for mod_key, mod_status in cmd_status_map.items():
+        if mod_key.lower() in str(cmd_current_module).lower():
+            cmd_ai_status = mod_status
+            break
+
     # Premium Dashboard Command Center Layout
     st.markdown('<div class="hero-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
+    
+    # Premium Live Command Bar
+    st.markdown(f"""
+    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 6px; padding: 0.65rem 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow-x: auto; font-size: 0.85rem; color: #a8a29e; width: 100%;">
+        <span style="color: #ffffff; font-weight: 600;">🧠 NexusAI</span>
+        <span style="color: rgba(255, 255, 255, 0.15); padding: 0 0.5rem;">│</span>
+        <span>📊 Current Module: <strong style="color: #ffffff;">{cmd_current_module}</strong></span>
+        <span style="color: rgba(255, 255, 255, 0.15); padding: 0 0.5rem;">│</span>
+        <span>🎯 Mission: <strong style="color: #ffffff;">{active_mission_title}</strong></span>
+        <span style="color: rgba(255, 255, 255, 0.15); padding: 0 0.5rem;">│</span>
+        <span>🟢 AI Status: <strong style="color: #4ade80;">{cmd_ai_status}</strong></span>
+        <span style="color: rgba(255, 255, 255, 0.15); padding: 0 0.5rem;">│</span>
+        <span>🕒 <strong style="color: #ffffff;">{cmd_current_time}</strong></span>
+    </div>
+    """, unsafe_allow_html=True)
     
     h_col1, h_col2 = st.columns([3, 2])
     
@@ -742,6 +774,7 @@ if st.session_state.current_page == "📊 Dashboard":
         """, unsafe_allow_html=True)
         
     st.write("")
+    
 
     # SECTION 2: Premium KPI Cards
     st.write("")
