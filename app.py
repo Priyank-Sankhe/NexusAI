@@ -1329,38 +1329,73 @@ elif st.session_state.current_page == "🎯 GapFinder":
         
     current_focus_val = st.session_state.brain.get("current_focus") if st.session_state.brain.get("current_focus") else "None"
 
-    # TOP COMMAND BAR
-    st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
+    # ==================== GAPFINDER HERO ====================
 
-    c_col1, c_col2 = st.columns([1.2, 1])
+st.markdown("""
+<div class="glass-card" style="padding:1.75rem; margin-bottom:1.5rem;">
+""", unsafe_allow_html=True)
 
-    with c_col1:
-        st.markdown("""
-        <div>
-            <h2 style="margin: 0; font-size: 1.75rem; font-weight: 600; color: #F8FAFC;">🎯 GapFinder</h2>
-            <p style="color: #94A3B8; margin: 0.25rem 0 0 0; font-size: 0.95rem;">AI-powered deliberate practice engine.</p>
-        </div>
-        """, unsafe_allow_html=True)
+hero_left, hero_right = st.columns([1.3, 1])
 
-    with c_col2:
-        st.markdown(f"""
-        <div style="display: flex; justify-content: flex-end; gap: 2rem; text-align: right;">
-            <div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600; margin-bottom: 0.25rem;">Current Focus</div>
-                <div style="font-size: 0.95rem; color: #F8FAFC; font-weight: 500;">{current_focus_val}</div>
+with hero_left:
+    st.markdown("""
+    <h2 style="margin:0; font-size:1.75rem; font-weight:600; color:#F8FAFC;">
+        🎯 GapFinder
+    </h2>
+    <p style="margin-top:0.35rem; color:#94A3B8; font-size:0.95rem;">
+        AI-powered deliberate practice engine.
+    </p>
+    """, unsafe_allow_html=True)
+
+with hero_right:
+    stat1, stat2, stat3 = st.columns(3)
+
+    with stat1:
+        st.markdown(
+            f"""
+            <div style="text-align:center;">
+                <div style="font-size:0.7rem;color:#94A3B8;text-transform:uppercase;font-weight:600;">
+                    Current Focus
+                </div>
+                <div style="margin-top:0.35rem;font-size:0.95rem;font-weight:600;color:#F8FAFC;">
+                    {current_focus_val}
+                </div>
             </div>
-            <div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600; margin-bottom: 0.25rem;">Recommended Topic</div>
-                <div style="font-size: 0.95rem; color: #38BDF8; font-weight: 500;">{recommended if recommended else "None"}</div>
-            </div>
-            <div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600; margin-bottom: 0.25rem;">Weak Topics Due</div>
-                <div style="font-size: 0.95rem; color: #EF4444; font-weight: 500;">{len(weak_topic_names)}</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            """,
+            unsafe_allow_html=True,
+        )
 
-    st.markdown('</div>', unsafe_allow_html=True)
+    with stat2:
+        st.markdown(
+            f"""
+            <div style="text-align:center;">
+                <div style="font-size:0.7rem;color:#94A3B8;text-transform:uppercase;font-weight:600;">
+                    Recommended Topic
+                </div>
+                <div style="margin-top:0.35rem;font-size:0.95rem;font-weight:600;color:#38BDF8;">
+                    {recommended if recommended else "None"}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with stat3:
+        st.markdown(
+            f"""
+            <div style="text-align:center;">
+                <div style="font-size:0.7rem;color:#94A3B8;text-transform:uppercase;font-weight:600;">
+                    Weak Topics Due
+                </div>
+                <div style="margin-top:0.35rem;font-size:0.95rem;font-weight:600;color:#EF4444;">
+                    {len(weak_topic_names)}
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 
     # GLASS WORKSPACE CARD
