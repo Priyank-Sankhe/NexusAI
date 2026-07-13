@@ -1399,9 +1399,9 @@ st.markdown("</div>", unsafe_allow_html=True)
 
 
     # GLASS WORKSPACE CARD
-    st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
+st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
     
-    ws_col_left, ws_col_right = st.columns([1, 1])
+ws_col_left, ws_col_right = st.columns([1, 1])
     
     with ws_col_left:
         st.markdown('<div style="font-size: 0.9rem; color: #94A3B8; margin-bottom: 0.5rem; font-weight: 500;">Choose the concept you want to strengthen.</div>', unsafe_allow_html=True)
