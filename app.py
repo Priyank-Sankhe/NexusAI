@@ -1319,6 +1319,7 @@ SCOPE: Only answer questions about software engineering, DSA, Java, Python, syst
 elif st.session_state.current_page == "🎯 GapFinder":
     st.session_state.brain["current_module"] = "GapFinder"
 
+    # --- BACKEND DATA & VARIABLE RETRIEVAL (UNMODIFIED) ---
     weak_topics = get_weak_topics(st.session_state.db["gap_log"])
     weak_topic_names = list(set([w['topic'] for w in weak_topics])) if weak_topics else []
     weak_topics_str = ', '.join(weak_topic_names) if weak_topic_names else "None"
@@ -1331,73 +1332,142 @@ elif st.session_state.current_page == "🎯 GapFinder":
         
     current_focus_val = st.session_state.brain.get("current_focus") if st.session_state.brain.get("current_focus") else "None"
 
-    # TOP COMMAND BAR
-    c_col1, c_col2 = st.columns([1.2, 1])
+    # --- PREMIUM CSS STYLING INJECTION (NAVY BLUE THEME) ---
+    st.markdown("""
+    <style>
+    /* Global Glass & Dashboard V2 Styling */
+    .gf-header-card {
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.4));
+        border: 1px solid rgba(56, 189, 248, 0.15);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+        backdrop-filter: blur(12px);
+    }
+    .gf-glass-card {
+        background: rgba(30, 41, 59, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 14px;
+        padding: 24px;
+        margin-bottom: 20px;
+        backdrop-filter: blur(10px);
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    }
+    .gf-metric-label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94A3B8;
+        font-weight: 600;
+        margin-bottom: 4px;
+    }
+    .gf-metric-value {
+        font-size: 1rem;
+        color: #F8FAFC;
+        font-weight: 500;
+    }
+    .badge-java {
+        background: rgba(245, 158, 11, 0.15);
+        color: #F59E0B;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        font-family: monospace;
+    }
+    .badge-diff {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: inline-block;
+    }
     
-    with c_col1:
+    /* Evaluation Dashboard Styling */
+    .review-header-v2 { font-size: 24px; font-weight: 800; color: #F8FAFC; margin-top: 25px; margin-bottom: 15px; }
+    .score-card-v2 { border-radius: 16px; padding: 22px; margin-bottom: 20px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+    .score-title-v2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+    .score-meta-v2 { color: #CBD5E1; font-size: 14px; opacity: 0.9; }
+    .card-title-v2 { font-size: 16px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+    .card-content-v2 { color: #CBD5E1; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+    .reco-card-v2 { border-radius: 12px; padding: 16px; margin-top: 10px; margin-bottom: 20px; font-weight: 600; font-size: 14px; backdrop-filter: blur(10px); }
+    
+    /* Progress Pipeline Tracking */
+    .progress-pipeline {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(15, 23, 42, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 16px 24px;
+        border-radius: 12px;
+        margin-top: 20px;
+        margin-bottom: 20px;
+    }
+    .pipeline-step {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #22C55E;
+    }
+    
+    /* Alert Styling Changes */
+    .custom-alert {
+        padding: 16px;
+        border-radius: 12px;
+        margin-top: 10px;
+        margin-bottom: 15px;
+        font-weight: 500;
+        font-size: 0.95rem;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # --- 1. UNIFIED PREMIUM HEADER CARD ---
+    header_col1, header_col2 = st.columns([1.3, 1])
+    with header_col1:
         st.markdown("""
-        <div style="margin-bottom: 1.5rem;">
-            <h2 style="margin: 0; font-size: 1.75rem; font-weight: 600; color: #F8FAFC;">🎯 GapFinder</h2>
-            <p style="color: #94A3B8; margin: 0.25rem 0 0 0; font-size: 0.95rem;">AI-powered deliberate practice engine.</p>
+        <div style="padding-top: 4px;">
+            <h2 style="margin: 0; font-size: 1.85rem; font-weight: 700; color: #F8FAFC; letter-spacing: -0.02em;">🎯 GapFinder</h2>
+            <p style="color: #94A3B8; margin: 0.35rem 0 0 0; font-size: 0.95rem;">AI-powered deliberate practice engine.</p>
         </div>
         """, unsafe_allow_html=True)
         
-    with c_col2:
+    with header_col2:
         st.markdown(f"""
-        <div style="display: flex; justify-content: flex-end; gap: 2rem; margin-bottom: 1.5rem; text-align: right;">
+        <div style="display: flex; justify-content: flex-end; gap: 1.75rem; text-align: right; background: rgba(30, 41, 59, 0.3); padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04);">
             <div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600; margin-bottom: 0.25rem;">Current Focus</div>
-                <div style="font-size: 0.95rem; color: #F8FAFC; font-weight: 500;">{current_focus_val}</div>
+                <div class="gf-metric-label">Current Focus</div>
+                <div class="gf-metric-value" style="color: #F8FAFC;">{current_focus_val}</div>
             </div>
             <div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600; margin-bottom: 0.25rem;">Recommended Topic</div>
-                <div style="font-size: 0.95rem; color: #38BDF8; font-weight: 500;">{recommended if recommended else "None"}</div>
+                <div class="gf-metric-label">Recommended Topic</div>
+                <div class="gf-metric-value" style="color: #38BDF8;">{recommended if recommended else "None"}</div>
             </div>
             <div>
-                <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600; margin-bottom: 0.25rem;">Weak Topics Due</div>
-                <div style="font-size: 0.95rem; color: #EF4444; font-weight: 500;">{len(weak_topic_names)}</div>
+                <div class="gf-metric-label">Weak Topics Due</div>
+                <div class="gf-metric-value" style="color: #EF4444;">{len(weak_topic_names)}</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-    # GLASS WORKSPACE CARD
-    
-    
-    ws_col_left, ws_col_right = st.columns([1, 1])
-    
-    with ws_col_left:
-        st.markdown('<div style="font-size: 0.9rem; color: #94A3B8; margin-bottom: 0.5rem; font-weight: 500;">Choose the concept you want to strengthen.</div>', unsafe_allow_html=True)
-        selected_topic = st.selectbox("Select a topic:", topics, index=default_index, key="gap_topic", label_visibility="collapsed")
-        
-    with ws_col_right:
-        status_chip = '<span class="status-chip" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border-color: rgba(245, 158, 11, 0.3);">Recommended</span>' if selected_topic == recommended else '<span class="status-chip" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3);">Ready</span>'
-        
-        st.markdown(f"""
-        <div class="analytics-card" style="padding: 1.25rem; margin: 0; box-sizing: border-box;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600;">Session Status</span>
-                {status_chip}
-            </div>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
-                    <span style="font-size: 0.85rem; color: #94A3B8;">Selected Topic</span>
-                    <span style="font-size: 0.9rem; color: #F8FAFC; font-weight: 500;">{selected_topic}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
-                    <span style="font-size: 0.85rem; color: #94A3B8;">Recommended Topic</span>
-                    <span style="font-size: 0.9rem; color: #38BDF8; font-weight: 500;">{recommended if recommended else "None"}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.85rem; color: #94A3B8;">Weak Topics Due</span>
-                    <span style="font-size: 0.9rem; color: #EF4444; font-weight: 500; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{weak_topics_str}">{weak_topics_str}</span>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-    
+    # --- 2. TOPIC SELECTION CARD ---
+    st.markdown('<div class="gf-glass-card" style="padding: 20px; margin-top: 10px; margin-bottom: 24px;">', unsafe_allow_html=True)
+    sel_col1, sel_col2 = st.columns([2, 1])
+    with sel_col1:
+        selected_topic = st.selectbox("Select Core Track Topic", topics, index=default_index, key="gap_topic", label_visibility="collapsed")
+    with sel_col2:
+        generate_clicked = st.button("Generate Problem", key="gen_problem", use_container_width=True, type="primary")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    if st.button("Generate Problem", key="gen_problem", use_container_width=True):
+    # Handle Logic for Generation Trigger (UNMODIFIED BUSINESS LOGIC)
+    if generate_clicked:
         st.session_state.brain["current_focus"] = selected_topic
         st.session_state.brain["last_activity"] = "Generated a practice problem"
         with st.spinner("Generating problem..."):
@@ -1412,91 +1482,124 @@ elif st.session_state.current_page == "🎯 GapFinder":
             st.session_state.current_problem = response.choices[0].message.content
             st.session_state.current_topic = selected_topic
 
+    # --- 3. CURRENT CHALLENGE CARD ---
     if "current_problem" in st.session_state:
-        # TOP CHALLENGE CARD
-        st.markdown("""
-        <div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 1.25rem 0; color: #F8FAFC; font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">📝 Current Challenge</h3>
-            <div style="max-height: 320px; overflow-y: auto; padding-right: 0.5rem; scrollbar-width: thin;">
-        """, unsafe_allow_html=True)
-
         raw_problem = st.session_state.current_problem
         lines = raw_problem.split('\n')
-        processed_html = ""
+        
+        # Meta-extraction for Premium Interface layout
+        prob_statement = ""
+        difficulty = "Medium"
+        hint_text = ""
+        example_text = ""
+        constraints_text = "Standard memory and execution timelines apply."
         
         for line in lines:
             cleaned = line.strip()
             if cleaned.startswith("PROBLEM:"):
-                processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: rgba(255,255,255,0.06); color: #F8FAFC; font-weight: 600; margin-bottom: 0.5rem; display: inline-block; border-color: rgba(255,255,255,0.15);">PROBLEM</span><p style="margin: 0; color: #CBD5E1; line-height: 1.6; font-size: 0.95rem;">{cleaned.replace("PROBLEM:", "").strip()}</p></div>'
+                prob_statement = cleaned.replace("PROBLEM:", "").strip()
             elif cleaned.startswith("DIFFICULTY:"):
-                diff = cleaned.replace("DIFFICULTY:", "").strip()
-                bg = "rgba(34, 197, 94, 0.15)" if "Easy" in diff else "rgba(245, 158, 11, 0.15)"
-                color = "#22C55E" if "Easy" in diff else "#F59E0B"
-                border = "rgba(34, 197, 94, 0.3)" if "Easy" in diff else "rgba(245, 158, 11, 0.3)"
-                processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: {bg}; color: {color}; border-color: {border}; font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">DIFFICULTY</span><p style="margin: 0; color: #F8FAFC; font-weight: 500; font-size: 0.95rem;">{diff}</p></div>'
+                difficulty = cleaned.replace("DIFFICULTY:", "").strip()
             elif cleaned.startswith("HINT:"):
-                processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3); font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">HINT</span><p style="margin: 0; color: #94A3B8; font-style: italic; line-height: 1.6; font-size: 0.95rem;">{cleaned.replace("HINT:", "").strip()}</p></div>'
+                hint_text = cleaned.replace("HINT:", "").strip()
             elif "Example" in cleaned or "EXAMPLE:" in cleaned:
-                processed_html += f'<div style="margin-bottom: 1rem;"><span class="status-chip" style="background: rgba(255,255,255,0.06); color: #94A3B8; border-color: rgba(255,255,255,0.1); font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">EXAMPLE</span><p style="margin: 0; color: #CBD5E1; font-family: monospace; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.9rem; line-height: 1.5;">{cleaned}</p></div>'
+                example_text += cleaned + "\n"
             else:
-                if cleaned:
-                    processed_html += f'<p style="margin: 0 0 0.75rem 0; color: #CBD5E1; line-height: 1.6; font-size: 0.95rem;">{cleaned}</p>'
+                if cleaned and not any(cleaned.startswith(prefix) for prefix in ["PROBLEM:", "DIFFICULTY:", "HINT:"]):
+                    prob_statement += "\n" + cleaned
 
-        if "PROBLEM:" in raw_problem:
-            st.markdown(processed_html, unsafe_allow_html=True)
-        else:
-            st.markdown(raw_problem)
+        diff_color = "#22C55E" if "Easy" in difficulty else "#F59E0B"
+        diff_bg = "rgba(34, 197, 94, 0.12)" if "Easy" in difficulty else "rgba(245, 158, 11, 0.12)"
+        diff_border = "rgba(34, 197, 94, 0.25)" if "Easy" in difficulty else "rgba(245, 158, 11, 0.25)"
+        est_time = "15 mins" if "Easy" in difficulty else "30 mins"
 
-        st.markdown("""
+        # Premium Interview Layout Render
+        st.markdown(f"""
+        <div class="gf-glass-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px; margin-bottom: 16px;">
+                <div style="font-size: 1.15rem; font-weight: 700; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">📝 Current Challenge</div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge-diff" style="background: {diff_bg}; color: {diff_color}; border: 1px solid {diff_border};">Difficulty: {difficulty}</span>
+                    <span class="badge-diff" style="background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.25);">Topic: {st.session_state.current_topic}</span>
+                    <span class="badge-diff" style="background: rgba(255, 255, 255, 0.05); color: #94A3B8; border: 1px solid rgba(255, 255, 255, 0.1);">⏱ Est. Time: {est_time}</span>
+                </div>
             </div>
-        </div>
+            <div style="margin-bottom: 16px;">
+                <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Problem Statement</div>
+                <div style="color: #E2E8F0; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">{prob_statement if prob_statement else raw_problem}</div>
+            </div>
         """, unsafe_allow_html=True)
+        
+        if example_text:
+            st.markdown(f"""
+            <div style="margin-bottom: 16px;">
+                <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Example</div>
+                <pre style="margin: 0; background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); color: #CBD5E1; font-family: monospace; font-size: 0.9rem;">{example_text.strip()}</pre>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        if hint_text:
+            st.markdown(f"""
+            <div style="margin-bottom: 4px;">
+                <div style="color: #38BDF8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">💡 Pro Hint</div>
+                <div style="color: #94A3B8; font-style: italic; font-size: 0.9rem; line-height: 1.5;">{hint_text}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        # TWO EQUAL HEIGHT WORKSPACE COLUMNS
+        st.markdown("</div>", unsafe_allow_html=True)
+
+        # --- 4. SOLUTION WORKSPACE COLS ---
         ws_col_left, ws_col_right = st.columns(2)
 
         with ws_col_left:
             st.markdown("""
-            <div class="glass-card" style="padding: 1.75rem; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0 0 1.5rem 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">⏱ Practice Session</h3>
+            <div class="gf-glass-card" style="height: 422px;">
+                <h3 style="margin: 0 0 16px 0; color: #F8FAFC; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">⏱ Practice Session</h3>
             """, unsafe_allow_html=True)
             
             gap_timer_component()
             
             st.markdown(f"""
-                <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06);">
-                    <span class="status-chip" style="background: rgba(255,255,255,0.06); color: #F8FAFC; border-color: rgba(255,255,255,0.1); margin: 0;">📚 {st.session_state.current_topic}</span>
-                    <span class="status-chip" style="background: rgba(56, 189, 248, 0.12); color: #38BDF8; border-color: rgba(56, 189, 248, 0.25); margin: 0;">⚡ Active</span>
-                    <span class="status-chip" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; border-color: rgba(14, 165, 233, 0.25); margin: 0;">🧠 AI Ready</span>
+                <div style="margin-top: 40px; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06);">
+                    <span class="badge-diff" style="background: rgba(255, 255, 255, 0.05); color: #F8FAFC; border: 1px solid rgba(255, 255, 255, 0.1);">📚 Track: {st.session_state.current_topic}</span>
+                    <span class="badge-diff" style="background: rgba(34, 197, 94, 0.12); color: #22C55E; border: 1px solid rgba(34, 197, 94, 0.25);">⚡ Active</span>
+                    <span class="badge-diff" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; border: 1px solid rgba(14, 165, 233, 0.25);">🧠 Copilot Attached</span>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
         with ws_col_right:
             st.markdown("""
-            <div class="glass-card" style="padding: 1.75rem; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0 0 1rem 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">💻 Solution Workspace</h3>
+            <div class="gf-glass-card" style="height: 422px; padding-bottom: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <h3 style="margin: 0; color: #F8FAFC; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">💻 Solution Workspace</h3>
+                    <span class="badge-java">Java</span>
+                </div>
             """, unsafe_allow_html=True)
             
             user_solution = st.text_area(
                 "Write your approach — pseudocode, logic, or actual code:", 
-                height=320, 
+                height=300, 
                 key="solution_input",
                 placeholder="Write Java code, pseudocode or explain your algorithm...",
                 label_visibility="collapsed"
             )
             
             st.markdown("""
-                <div style="color: #94A3B8; font-size: 0.8rem; margin-top: 0.75rem; font-weight: 500;">NexusAI evaluates correctness, efficiency and reasoning.</div>
+                <div style="color: #64748B; font-size: 0.78rem; margin-top: 8px; font-weight: 500;">NexusAI evaluates logic correctness, asymptotic complexity and space efficiency.</div>
             </div>
             """, unsafe_allow_html=True)
 
-        # EVALUATION ACTION TRIGGER
+        # --- 5. AI EVALUATION TRIGGER & REDESIGNED DASHBOARD REPORT ---
         if st.button("Evaluate My Solution", key="eval_solution", use_container_width=True):
             if len(user_solution.strip()) < 10:
-                st.warning("Write an actual solution attempt before evaluating.")
+                st.markdown("""
+                <div class="custom-alert" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); color: #F59E0B;">
+                    ⚠️ Please provide an actual descriptive solution attempt before requesting evaluation.
+                </div>
+                """, unsafe_allow_html=True)
             else:
-                with st.spinner("Evaluating..."):
+                with st.spinner("Evaluating architecture performance..."):
                     eval_prompt = f"Problem: {st.session_state.current_problem}\n\nStudent's solution: {user_solution}\n\nEvaluate strictly:\n1. CORRECT: What did they get right?\n2. MISSING: What's wrong or missing?\n3. OPTIMAL SOLUTION: Show the correct approach\n4. SCORE: 0 (wrong), 1 (partial), 2 (correct) — number only\n5. VERDICT: \"Move on\" or \"Review this topic\"\n\nBe strict. Do not give 2 unless genuinely correct."
                     eval_response = client.chat.completions.create(
                         model="llama-3.3-70b-specdec",
@@ -1515,12 +1618,12 @@ elif st.session_state.current_page == "🎯 GapFinder":
                             elif "2" in line: score = 2
                             break
 
-                    # --- PARSING HELPERS FOR PREMIUM REVIEW DASHBOARD ---
+                    # --- PARSING HELPERS FOR METADATA CARDS ---
                     def extract_section(text, current_marker, next_markers):
                         try:
                             start_idx = text.find(current_marker)
                             if start_idx == -1:
-                                return "No data available."
+                                return "Data chunk missing from context stream."
                             start_idx += len(current_marker)
                             end_idx = len(text)
                             for marker in next_markers:
@@ -1535,20 +1638,6 @@ elif st.session_state.current_page == "🎯 GapFinder":
                     missing_content = extract_section(evaluation, "MISSING:", ["OPTIMAL SOLUTION:", "SCORE:", "VERDICT:", "CORRECT:"])
                     optimal_content = extract_section(evaluation, "OPTIMAL SOLUTION:", ["SCORE:", "VERDICT:", "CORRECT:", "MISSING:"])
 
-                    # --- PREMIUM AI REVIEW DASHBOARD DISPLAY (V2 GLASSMORPHIC STYLING) ---
-                    st.markdown("""
-                    <style>
-                    .review-header-v2 { font-size: 26px; font-weight: 800; color: #F8FAFC; margin-top: 20px; margin-bottom: 15px; }
-                    .score-card-v2 { border-radius: 16px; padding: 22px; margin-bottom: 25px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-                    .score-title-v2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-                    .score-meta-v2 { color: #CBD5E1; font-size: 14px; opacity: 0.9; }
-                    .glass-card-v2 { background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 20px; margin-bottom: 16px; backdrop-filter: blur(10px); box-shadow: inset 0 1px rgba(255,255,255,.05); }
-                    .card-title-v2 { font-size: 16px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-                    .card-content-v2 { color: #CBD5E1; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
-                    .reco-card-v2 { border-radius: 12px; padding: 16px; margin-top: 10px; margin-bottom: 20px; font-weight: 600; font-size: 14px; backdrop-filter: blur(10px); }
-                    </style>
-                    """, unsafe_allow_html=True)
-
                     # Heading
                     st.markdown('<div class="review-header-v2">🤖 NexusAI Review</div>', unsafe_allow_html=True)
 
@@ -1560,32 +1649,32 @@ elif st.session_state.current_page == "🎯 GapFinder":
                         st.markdown(f"""
                         <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(34, 197, 94, 0.35);">
                             <div class="score-title-v2" style="color: #22C55E;">✅ Excellent</div>
-                            <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
+                            <div class="score-meta-v2"><b>Score:</b> {score}/2 Overall Result &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
                         </div>
                         """, unsafe_allow_html=True)
                     elif score == 1:
                         st.markdown(f"""
                         <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(245, 158, 11, 0.35);">
                             <div class="score-title-v2" style="color: #F59E0B;">⚠ Partial Solution</div>
-                            <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
+                            <div class="score-meta-v2"><b>Score:</b> {score}/2 Overall Result &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
                         </div>
                         """, unsafe_allow_html=True)
                     else:
                         st.markdown(f"""
                         <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(239, 68, 68, 0.35);">
                             <div class="score-title-v2" style="color: #EF4444;">❌ Needs Improvement</div>
-                            <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
+                            <div class="score-meta-v2"><b>Score:</b> {score}/2 Overall Result &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
                         </div>
                         """, unsafe_allow_html=True)
 
                     # Three Dynamic Glass Cards
                     st.markdown(f"""
                     <div class="glass-card-v2">
-                        <div class="card-title-v2" style="color: #22C55E;">✓ Strengths</div>
+                        <div class="card-title-v2" style="color: #22C55E;">✓ Correct</div>
                         <div class="card-content-v2">{correct_content}</div>
                     </div>
                     <div class="glass-card-v2">
-                        <div class="card-title-v2" style="color: #F59E0B;">⚠ Improvements</div>
+                        <div class="card-title-v2" style="color: #F59E0B;">⚠ Missing</div>
                         <div class="card-content-v2">{missing_content}</div>
                     </div>
                     <div class="glass-card-v2">
@@ -1608,7 +1697,20 @@ elif st.session_state.current_page == "🎯 GapFinder":
                         </div>
                         """, unsafe_allow_html=True)
 
-                    # --- BACKEND LOGIC & INTEGRATIONS (UNMODIFIED) ---
+                    # --- 6. MISSION PROGRESS PIPELINE TRACKING ---
+                    st.markdown("""
+                    <div class="progress-pipeline">
+                        <div class="pipeline-step">✓ Problem Generated</div>
+                        <div style="color: rgba(255,255,255,0.15);">➔</div>
+                        <div class="pipeline-step">✓ Solution Submitted</div>
+                        <div style="color: rgba(255,255,255,0.15);">➔</div>
+                        <div class="pipeline-step">✓ AI Reviewed</div>
+                        <div style="color: rgba(255,255,255,0.15);">➔</div>
+                        <div class="pipeline-step">✓ Gap Log Updated</div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                    # --- 7. SUCCESS / WARNING CUSTOM CARDS (BACKEND UPDATES LEFT UNTOUCHED) ---
                     st.session_state.db["gap_log"].append({
                         "type": "gap_entry",
                         "topic": st.session_state.current_topic,
@@ -1622,8 +1724,18 @@ elif st.session_state.current_page == "🎯 GapFinder":
                     if score == 2: st.session_state.brain["current_focus"] = None
                     else: st.session_state.brain["current_focus"] = st.session_state.current_topic
 
-                    if score <= 1: st.error(f"⚠️ {st.session_state.current_topic} flagged as weak. Will resurface in 7 days.")
-                    else: st.success(f"✅ {st.session_state.current_topic} marked solid.")
+                    if score <= 1:
+                        st.markdown(f"""
+                        <div class="custom-alert" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #FCA5A5;">
+                            ⚠️ <b>System Flagged Weakness:</b> {st.session_state.current_topic} scheduled for cyclical review resurfacing in 7 days.
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div class="custom-alert" style="background: rgba(34, 197, 94, 0.15); border: 1px solid rgba(34, 197, 94, 0.3); color: #86EFAC;">
+                            ✅ <b>Concept Consolidated:</b> {st.session_state.current_topic} marked solid and locked into memory store.
+                        </div>
+                        """, unsafe_allow_html=True)
                     
 elif st.session_state.current_page == "⚡ FlowState":
 
