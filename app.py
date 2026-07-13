@@ -780,7 +780,12 @@ if st.session_state.current_page == "📊 Dashboard":
     st.write("")
 
     # SECTION 3: Mission Intelligence
-    st.markdown('<div class="section-title">🎯 Mission Intelligence</div>', unsafe_allow_html=True)
+    st.markdown("""
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="margin: 0; font-size: 1.5rem; font-weight: 600; color: #ffffff;">🎯 Mission Intelligence</h2>
+        <p style="color: #a8a29e; margin: 0.25rem 0 0 0; font-size: 0.95rem;">AI-generated task based on your learning performance.</p>
+    </div>
+    """, unsafe_allow_html=True)
     
     if mission:
         priority = mission.get("priority", 100)
@@ -796,29 +801,42 @@ if st.session_state.current_page == "📊 Dashboard":
             total_seconds = mission["duration"] * 60
             mission["progress"] = get_progress(elapsed_seconds, total_seconds)
 
-        st.markdown(f"""
-        <div class="glass-card" style="margin-bottom: 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                <div>
-                    <h3 style="margin: 0 0 0.5rem 0; color: #ffffff;">{mission["title"]}</h3>
-                    <p style="color: #a8a29e; margin: 0; font-size: 0.9rem; line-height: 1.4;">{mission["reason"]}</p>
-                </div>
-                <div style="display: flex; gap: 0.5rem; align-items: center;">
+        m_col_left, m_col_center, m_col_right = st.columns([1.5, 1.5, 1])
+        
+        with m_col_left:
+            st.markdown(f"""
+            <div class="analytics-card" style="height: 100%; min-height: 220px; box-sizing: border-box;">
+                <h3 style="margin: 0 0 0.5rem 0; font-size: 1.25rem; color: #ffffff;">{mission["title"]}</h3>
+                <p style="color: #a8a29e; margin: 0 0 1.25rem 0; font-size: 0.9rem; line-height: 1.5;">{mission["reason"]}</p>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                     {p_chip}
                     <span class="status-chip">{mission["status"].title()}</span>
                 </div>
             </div>
-            <div style="margin-top: 1.5rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; font-size: 0.85rem; color: #a8a29e;">
-                <span>Target Target: {mission["duration"]} min</span>
-                <span>Track Progress: {mission["progress"]}%</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        m_action_left, m_action_right = st.columns([3, 1])
-        with m_action_left:
+            """, unsafe_allow_html=True)
+            
+        with m_col_center:
+            started_text = f"Started: {mission['started_at']}" if mission.get("started_at") else "Pending start"
+            st.markdown(f"""
+            <div class="analytics-card" style="height: 100%; min-height: 220px; box-sizing: border-box;">
+                <div style="text-align: center; margin-bottom: 0.75rem;">
+                    <div style="font-size: 3rem; font-weight: 700; color: #ffffff; line-height: 1;">{mission["progress"]}%</div>
+                </div>
+            """, unsafe_allow_html=True)
+            
             st.progress(mission["progress"] / 100)
-        with m_action_right:
+            
+            st.markdown(f"""
+                <div style="display: flex; justify-content: space-between; margin-top: 1.25rem; font-size: 0.85rem; color: #a8a29e; font-weight: 500;">
+                    <span>⏱️ {mission["duration"]} Min</span>
+                    <span>{started_text}</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
+        with m_col_right:
+            st.markdown('<div class="analytics-card" style="height: 100%; min-height: 220px; box-sizing: border-box;">', unsafe_allow_html=True)
+            
             if mission["status"] == MISSION_PENDING:
                 if st.button("▶ Start Mission", key="dash_start_mission", use_container_width=True):
                     mission["status"] = MISSION_ACTIVE
@@ -833,14 +851,35 @@ if st.session_state.current_page == "📊 Dashboard":
                     st.session_state.db["current_mission"] = None
                     save_mission()
                     st.rerun()
+            else:
+                st.button("✅ Completed", key="dash_mission_done", disabled=True, use_container_width=True)
+                
+            st.markdown(f"""
+                <div class="metric-card" style="margin-top: 1.5rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2);">
+                    <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600; margin-bottom: 0.35rem;">Mission Summary</div>
+                    <div style="font-size: 0.9rem; color: #f5f1ec; line-height: 1.4;">Target focus duration of <strong>{mission["duration"]} minutes</strong> to stabilize weak metrics.</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+            
     else:
         st.markdown("""
-        <div class="glass-card" style="padding: 2rem; text-align: center; color: #a8a29e;">
-            No active mission yet. Solve problems in GapFinder to generate performance markers.
-        </div>
+        <div class="glass-card" style="padding: 4rem 2rem; text-align: center; border: 1px dashed rgba(255,255,255,0.15);">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🎯</div>
+            <h3 style="color: #ffffff; margin: 0 0 0.5rem 0; font-size: 1.5rem;">No Active Mission</h3>
+            <p style="color: #a8a29e; font-size: 1rem; max-width: 450px; margin: 0 auto 2rem auto;">NexusAI automatically creates missions based on GapFinder performance.</p>
         """, unsafe_allow_html=True)
+        
+        emp_col1, emp_col2, emp_col3 = st.columns([1, 1.5, 1])
+        with emp_col2:
+            if st.button("Generate Practice Problem", key="dash_generate_gapfinder", use_container_width=True):
+                set_page("🎯 GapFinder")
+                st.rerun()
+                
+        st.markdown('</div>', unsafe_allow_html=True)
 
     st.write("")
+
 
     # SECTION 4: Learning Analytics (Fixed structural containment via unified HTML block)
     st.markdown('<div class="section-title">📊 Intelligence Framework Matrix</div>', unsafe_allow_html=True)
