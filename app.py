@@ -598,6 +598,7 @@ with st.sidebar:
     st.caption("NexusAI v1.0")
 
 # ==================== RENDER COMPONENT CONTROLLERS ====================
+```python
 if st.session_state.current_page == "📊 Dashboard":
     st.session_state.brain["current_module"] = "Dashboard"
     
@@ -882,20 +883,9 @@ if st.session_state.current_page == "📊 Dashboard":
     # SECTION 6: Quick Actions
     st.markdown('<div class="section-title">⚡ Command Quick Actions</div>', unsafe_allow_html=True)
     
-    qa_col1, qa_col2, qa_col3, qa_col4, qa_col5 = st.columns(5)
+    qa_col1, qa_col2, qa_col3, qa_col4 = st.columns(4)
     
     with qa_col1:
-        st.markdown("""
-        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
-            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">🚀</div>
-            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">Mission Engine</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Continue Mission", key="qa_continue_mission", use_container_width=True):
-            set_page("🚀 Mission Control")
-            st.rerun()
-
-    with qa_col2:
         st.markdown("""
         <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
             <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">🎯</div>
@@ -908,7 +898,7 @@ if st.session_state.current_page == "📊 Dashboard":
             set_page("🎯 GapFinder")
             st.rerun()
 
-    with qa_col3:
+    with qa_col2:
         st.markdown("""
         <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
             <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">💬</div>
@@ -916,10 +906,10 @@ if st.session_state.current_page == "📊 Dashboard":
         </div>
         """, unsafe_allow_html=True)
         if st.button("Open Study Chat", key="qa_study_chat", use_container_width=True):
-            set_page("💬 Nexus Chat")
+            set_page("💬 Study Chat")
             st.rerun()
 
-    with qa_col4:
+    with qa_col3:
         st.markdown("""
         <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
             <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">⏱️</div>
@@ -930,7 +920,7 @@ if st.session_state.current_page == "📊 Dashboard":
             set_page("⏱️ FlowState")
             st.rerun()
 
-    with qa_col5:
+    with qa_col4:
         st.markdown("""
         <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
             <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">👔</div>
@@ -940,6 +930,7 @@ if st.session_state.current_page == "📊 Dashboard":
         if st.button("Start Mock Interview", key="qa_start_interview", use_container_width=True):
             set_page("👔 Mock Interview")
             st.rerun()
+
 
 
 elif st.session_state.current_page == "💬 Study Chat":
