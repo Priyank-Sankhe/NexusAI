@@ -598,14 +598,14 @@ with st.sidebar:
     st.caption("NexusAI v1.0")
 
 # ==================== RENDER COMPONENT CONTROLLERS ====================
-
 if st.session_state.current_page == "📊 Dashboard":
     st.session_state.brain["current_module"] = "Dashboard"
     
-    # Hero Summary
+    # Time and Greeting Setup
     now = datetime.now(ZoneInfo("Asia/Kolkata"))
     hour = now.hour
     today_name = now.strftime("%A")
+    formatted_date = now.strftime("%B %d, %Y")
 
     if hour < 12: greeting = "Good Morning ☀️"
     elif hour < 17: greeting = "Good Afternoon 🌤️"
@@ -617,147 +617,327 @@ if st.session_state.current_page == "📊 Dashboard":
     weak_count = len({e["topic"] for e in gap_log_h if e.get("type") == "gap_entry" and e.get("score", 0) <= 1})
     day_count = len(day_logs_h)
 
-    hero = st.container(border=True)
-    with hero:
-        left, right = st.columns([4, 1])
-        with left:
-            st.title("🧠 Command Center")
-            st.subheader(greeting)
-            st.write("### Ready to continue your Software Engineering journey?")
-            st.caption("Every coding session brings you closer to becoming a Software Engineer.")
-        with right:
-            st.markdown(f"### 📅 {today_name}")
-
-    st.write("")
-    a, b, c = st.columns(3)
-    with a: st.metric("📚 Problems Solved", problem_count)
-    with b: st.metric("🎯 Weak Topics", weak_count)
-    with c: st.metric("📅 Study Days", day_count)
-    st.write("")
-
-    # AI Recommendation
+    # SECTION 1: Large Hero Card
     brain = st.session_state.brain
     recommended_topic = brain.get("recommended_topic")
 
     if recommended_topic:
-        recommendation = f"🧠 **NexusAI Recommendation:** Your highest priority right now is **{recommended_topic}**. Strengthen this topic before moving on."
+        recommendation_text = f"Your highest priority right now is <strong>{recommended_topic}</strong>. Strengthen this topic before moving on."
+        status_label = "AI Recommendation"
     elif brain["current_focus"]:
-        recommendation = f"🎯 **Status:** Continue working on active focus: **{brain['current_focus']}**."
+        recommendation_text = f"Continue working on your active focus: <strong>{brain['current_focus']}</strong>."
+        status_label = "Current Focus"
     elif mission and mission["status"] == MISSION_PENDING:
-        recommendation = f"🚀 **Status:** Start today's queued mission: **{mission['title']}**."
+        recommendation_text = f"Start today's queued mission: <strong>{mission['title']}</strong>."
+        status_label = "Queued Mission"
     else:
-        recommendation = "💡 **Status:** Clear skies! Generate a new GapFinder problem to keep improving."
+        recommendation_text = "Clear skies! Generate a new GapFinder problem to keep improving."
+        status_label = "Status"
 
-    st.info(recommendation)
+    active_mission_title = mission["title"] if mission else "No Active Mission"
+    progress_val = mission["progress"] if mission else 0
 
+    st.markdown(f"""
+    <div class="hero-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; text-align: left; margin-bottom: 1.5rem;">
+            <div>
+                <h1 style="margin: 0; font-size: 2.25rem;">{greeting}</h1>
+                <p style="color: #a8a29e; margin: 0.5rem 0 0 0; font-size: 1.1rem;">Ready to continue your Software Engineering journey?</p>
+            </div>
+            <div style="text-align: right;">
+                <span class="status-chip">{today_name}</span>
+                <p style="color: #a8a29e; margin: 0.5rem 0 0 0; font-size: 0.9rem;">{formatted_date}</p>
+            </div>
+        </div>
+        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 1.25rem; text-align: left; margin-bottom: 1rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #b77a48; font-weight: 600; margin-bottom: 0.25rem;">{status_label}</div>
+            <div style="font-size: 1rem; color: #f5f1ec;">{recommendation_text}</div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; text-align: left; background: rgba(0,0,0,0.15); padding: 0.75rem 1rem; border-radius: 8px;">
+            <span style="font-size: 0.85rem; color: #a8a29e;">Active Mission Track: <strong>{active_mission_title}</strong></span>
+            <span style="font-size: 0.85rem; color: #b77a48; font-weight: 500;">Progress: {progress_val}%</span>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    st.write("")
+
+    # Routing Action from Hero Recommendation
     if recommended_topic:
-        if st.button(f"🎯 Route to GapFinder to Practice {recommended_topic}", use_container_width=True):
+        if st.button(f"🎯 Route to GapFinder to Practice {recommended_topic}", key="hero_route_gap", use_container_width=True):
             st.session_state.brain["current_focus"] = recommended_topic
             set_page("🎯 GapFinder")
             st.rerun()
     elif mission and mission["status"] == MISSION_PENDING:
-        if st.button("🚀 Start Current Mission", use_container_width=True):
+        if st.button("🚀 Start Current Mission", key="hero_start_mission", use_container_width=True):
             mission["status"] = MISSION_ACTIVE
             mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             save_mission()
             st.rerun()
 
-    # Current Mission Card
-    st.markdown("---")
-    st.markdown("### 🎯 Active Mission Track")
-    mission_card = st.container(border=True)
-    with mission_card:
-        if mission:
-            left, right = st.columns([3, 1])
-            with left:
-                st.subheader(mission["title"])
-                priority = mission.get("priority", 100)
-                if priority >= 90: st.success("🔥 High Priority")
-                elif priority >= 60: st.warning("⚡ Medium Priority")
-                else: st.info("📌 Low Priority")
+    # SECTION 2: Premium KPI Cards
+    st.write("")
+    m_col1, m_col2, m_col3, m_col4 = st.columns(4)
+    
+    with m_col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">Problems Solved</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">{problem_count}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with m_col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">Weak Topics</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #d9985c; margin-top: 0.25rem;">{weak_count}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with m_col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">Study Days</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">{day_count}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with m_col4:
+        status_string = mission["status"].title() if mission else "None"
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">Mission Status</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">{status_string}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    st.write("")
 
-                st.caption(mission["reason"])
-
-                if mission["status"] == MISSION_ACTIVE and mission["started_at"]:
-                    elapsed_seconds = get_elapsed_time(mission["started_at"])
-                    total_seconds = mission["duration"] * 60
-                    mission["progress"] = get_progress(elapsed_seconds, total_seconds)
-
-                st.progress(mission["progress"] / 100)
-                st.caption(f"Progress: {mission['progress']}%")
-
-            with right:
-                st.metric("Duration", f"{mission['duration']} min")
-                st.metric("Status", mission["status"].title())
-
-                if mission["status"] == MISSION_PENDING:
-                    if st.button("▶ Start Mission", key="dash_start_mission", use_container_width=True):
-                        mission["status"] = MISSION_ACTIVE
-                        mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        save_mission()
-                        st.rerun()
-
-                if mission["status"] == MISSION_ACTIVE:
-                    if st.button("✅ Complete Mission", key="dash_complete_mission", use_container_width=True):
-                        mission["status"] = MISSION_COMPLETED
-                        mission["progress"] = 100
-                        mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        st.session_state.db["current_mission"] = None
-                        save_mission()
-                        st.rerun()
+    # SECTION 3: Mission Intelligence
+    st.markdown('<div class="section-title">🎯 Mission Intelligence</div>', unsafe_allow_html=True)
+    
+    if mission:
+        priority = mission.get("priority", 100)
+        if priority >= 90:
+            p_chip = '<span class="status-chip" style="background: rgba(220, 38, 38, 0.15); color: #ef4444; border-color: rgba(220, 38, 38, 0.3);">🔥 High Priority</span>'
+        elif priority >= 60:
+            p_chip = '<span class="status-chip" style="background: rgba(217, 119, 6, 0.15); color: #f59e0b; border-color: rgba(217, 119, 6, 0.3);">⚡ Medium Priority</span>'
         else:
-            st.info("No active mission yet. Solve problems in GapFinder to generate performance markers.")
+            p_chip = '<span class="status-chip" style="background: rgba(13, 148, 136, 0.15); color: #14b8a6; border-color: rgba(13, 148, 136, 0.3);">📌 Low Priority</span>'
 
-    # Analytical Logs
-    st.markdown("---")
-    st.markdown("### ⚠️ Tracked Gaps & Retest Windows")
-    db = st.session_state.db
-    gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
-    day_logs = db["day_logs"]
-    weak_entries = [e for e in gap_log if e.get("score", 0) <= 1]
+        if mission["status"] == MISSION_ACTIVE and mission["started_at"]:
+            elapsed_seconds = get_elapsed_time(mission["started_at"])
+            total_seconds = mission["duration"] * 60
+            mission["progress"] = get_progress(elapsed_seconds, total_seconds)
 
-    if weak_entries:
-        topic_data = {}
-        for e in weak_entries:
-            topic = e["topic"]
-            if topic not in topic_data:
-                topic_data[topic] = {"attempts": 0, "last_attempt": e["date"]}
-            topic_data[topic]["attempts"] += 1
-            if e["date"] > topic_data[topic]["last_attempt"]:
-                topic_data[topic]["last_attempt"] = e["date"]
-
-        for topic, data in topic_data.items():
-            days_since = (datetime.now().date() - datetime.strptime(data["last_attempt"], "%Y-%m-%d").date()).days
-            retest_due = "🔴 Due now" if days_since >= 7 else f"🟡 In {7 - days_since} days"
-            st.markdown(f"**{topic}** — {data['attempts']} weak attempt(s) — Last: {data['last_attempt']} — Retest: {retest_due}")
+        st.markdown(f"""
+        <div class="glass-card" style="margin-bottom: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #ffffff;">{mission["title"]}</h3>
+                    <p style="color: #a8a29e; margin: 0; font-size: 0.9rem; line-height: 1.4;">{mission["reason"]}</p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    {p_chip}
+                    <span class="status-chip">{mission["status"].title()}</span>
+                </div>
+            </div>
+            <div style="margin-top: 1.5rem; margin-bottom: 0.5rem; display: flex; justify-content: space-between; font-size: 0.85rem; color: #a8a29e;">
+                <span>Target Target: {mission["duration"]} min</span>
+                <span>Track Progress: {mission["progress"]}%</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Action execution parameters inside the container
+        m_action_left, m_action_right = st.columns([3, 1])
+        with m_action_left:
+            st.progress(mission["progress"] / 100)
+        with m_action_right:
+            if mission["status"] == MISSION_PENDING:
+                if st.button("▶ Start Mission", key="dash_start_mission", use_container_width=True):
+                    mission["status"] = MISSION_ACTIVE
+                    mission["started_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    save_mission()
+                    st.rerun()
+            elif mission["status"] == MISSION_ACTIVE:
+                if st.button("✅ Complete Mission", key="dash_complete_mission", use_container_width=True):
+                    mission["status"] = MISSION_COMPLETED
+                    mission["progress"] = 100
+                    mission["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    st.session_state.db["current_mission"] = None
+                    save_mission()
+                    st.rerun()
     else:
-        st.success("No weak metrics flagged yet.")
+        st.markdown("""
+        <div class="glass-card" style="padding: 2rem; text-align: center; color: #a8a29e;">
+            No active mission yet. Solve problems in GapFinder to generate performance markers.
+        </div>
+        """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown("### 📈 Analytics Matrix")
-    if gap_log:
-        topic_scores = {}
-        for e in gap_log:
-            topic = e["topic"]
-            if topic not in topic_scores: topic_scores[topic] = []
-            topic_scores[topic].append(e.get("score", 0))
+    st.write("")
 
-        for topic, scores in topic_scores.items():
-            avg = sum(scores) / len(scores)
-            bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
-            st.markdown(f"{bar} **{topic}** — {len(scores)} attempt(s) — Avg score: {avg:.1f}/2")
-    else:
-        st.info("No metrics tracked yet. Practice code concepts via side modules to populate charts.")
+    # SECTION 4: Learning Analytics
+    st.markdown('<div class="section-title">📊 Intelligence Framework Matrix</div>', unsafe_allow_html=True)
+    
+    ana_col1, ana_col2 = st.columns(2)
+    
+    with ana_col1:
+        st.markdown('<div class="analytics-card" style="height: 100%;">', unsafe_allow_html=True)
+        st.markdown('<h4 style="margin-top: 0; margin-bottom: 1rem; color: #ffffff;">⚠️ Tracked Gaps & Retest Windows</h4>', unsafe_allow_html=True)
+        
+        db = st.session_state.db
+        gap_log = [e for e in db["gap_log"] if e.get("type") == "gap_entry"]
+        day_logs = db["day_logs"]
+        weak_entries = [e for e in gap_log if e.get("score", 0) <= 1]
 
-    st.markdown("---")
-    st.markdown("### 🌙 Archived Day Logs")
+        if weak_entries:
+            topic_data = {}
+            for e in weak_entries:
+                topic = e["topic"]
+                if topic not in topic_data:
+                    topic_data[topic] = {"attempts": 0, "last_attempt": e["date"]}
+                topic_data[topic]["attempts"] += 1
+                if e["date"] > topic_data[topic]["last_attempt"]:
+                    topic_data[topic]["last_attempt"] = e["date"]
+
+            for topic, data in topic_data.items():
+                days_since = (datetime.now().date() - datetime.strptime(data["last_attempt"], "%Y-%m-%d").date()).days
+                if days_since >= 7:
+                    indicator = '<span style="color: #ef4444; font-weight: 600;">🔴 Due now</span>'
+                else:
+                    indicator = f'<span style="color: #f59e0b; font-weight: 500;">🟡 In {7 - days_since} days</span>'
+                
+                st.markdown(f"""
+                <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid rgba(255,255,255,0.04);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 500; color: #f5f1ec;">{topic}</span>
+                        {indicator}
+                    </div>
+                    <div style="font-size: 0.8rem; color: #a8a29e; margin-top: 0.25rem;">
+                        {data['attempts']} weak attempt(s) — Last tracked: {data['last_attempt']}
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.markdown('<p style="color: #a8a29e; font-size: 0.9rem;">No weak metrics flagged yet.</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with ana_col2:
+        st.markdown('<div class="analytics-card" style="height: 100%;">', unsafe_allow_html=True)
+        st.markdown('<h4 style="margin-top: 0; margin-bottom: 1rem; color: #ffffff;">📈 Analytics Matrix</h4>', unsafe_allow_html=True)
+        
+        if gap_log:
+            topic_scores = {}
+            for e in gap_log:
+                topic = e["topic"]
+                if topic not in topic_scores: topic_scores[topic] = []
+                topic_scores[topic].append(e.get("score", 0))
+
+            for topic, scores in topic_scores.items():
+                avg = sum(scores) / len(scores)
+                bar = "🟢" if avg >= 1.5 else "🟡" if avg >= 0.8 else "🔴"
+                
+                st.markdown(f"""
+                <div style="padding: 0.75rem; background: rgba(255,255,255,0.02); border-radius: 6px; margin-bottom: 0.5rem; border: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="margin-right: 0.5rem;">{bar}</span>
+                        <span style="font-weight: 500; color: #f5f1ec;">{topic}</span>
+                        <span style="font-size: 0.8rem; color: #a8a29e; margin-left: 0.5rem;">({len(scores)} attempts)</span>
+                    </div>
+                    <div style="font-weight: 600; color: #ffffff;">{avg:.1f} <span style="font-weight: 400; color: #a8a29e; font-size: 0.85rem;">/ 2</span></div>
+                </div>
+                """, unsafe_allow_html=True)
+        else:
+            st.markdown('<p style="color: #a8a29e; font-size: 0.9rem;">No metrics tracked yet. Practice code concepts via side modules to populate charts.</p>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    st.write("")
+
+    # SECTION 5: Activity Timeline
+    st.markdown('<div class="section-title">🌙 Archived Day Logs</div>', unsafe_allow_html=True)
+    
     if day_logs:
         for log in reversed(day_logs[-5:]):
-            with st.expander(f"📅 {log['date']}"):
-                st.markdown(f"**Completed:** {log['completed']}")
-                st.markdown(f"**Review:** {log['review']}")
+            st.markdown(f"""
+            <div class="timeline-card">
+                <div style="font-weight: 600; color: #ffffff; font-size: 0.95rem; margin-bottom: 0.5rem;">{log['date']}</div>
+                <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 6px; padding: 0.75rem; font-size: 0.9rem; color: #d6ccc2;">
+                    <div style="margin-bottom: 0.25rem;"><strong>Completed:</strong> {log['completed']}</div>
+                    <div><strong>Review:</strong> {log['review']}</div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
     else:
-        st.info("No study intervals closed yet.")
+        st.markdown("""
+        <div class="glass-card" style="padding: 1.5rem; text-align: center; color: #a8a29e; font-size: 0.9rem;">
+            No study intervals closed yet.
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.write("")
+
+    # SECTION 6: Quick Actions
+    st.markdown('<div class="section-title">⚡ Command Quick Actions</div>', unsafe_allow_html=True)
+    
+    qa_col1, qa_col2, qa_col3, qa_col4, qa_col5 = st.columns(5)
+    
+    with qa_col1:
+        st.markdown("""
+        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
+            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">🚀</div>
+            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">Mission Engine</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Continue Mission", key="qa_continue_mission", use_container_width=True):
+            set_page("🚀 Mission Control")
+            st.rerun()
+
+    with qa_col2:
+        st.markdown("""
+        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
+            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">🎯</div>
+            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">GapFinder</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Practice Weak Topic", key="qa_practice_weak", use_container_width=True):
+            if recommended_topic:
+                st.session_state.brain["current_focus"] = recommended_topic
+            set_page("🎯 GapFinder")
+            st.rerun()
+
+    with qa_col3:
+        st.markdown("""
+        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
+            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">💬</div>
+            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">Nexus Chat</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Open Study Chat", key="qa_study_chat", use_container_width=True):
+            set_page("💬 NexusChat")
+            st.rerun()
+
+    with qa_col4:
+        st.markdown("""
+        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
+            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">⏱️</div>
+            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">FlowState</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Resume FlowState", key="qa_resume_flow", use_container_width=True):
+            set_page("⏱️ FlowState")
+            st.rerun()
+
+    with qa_col5:
+        st.markdown("""
+        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
+            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">👔</div>
+            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">Interviews</div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Start Mock Interview", key="qa_start_interview", use_container_width=True):
+            set_page("👔 Mock Interview")
+            st.rerun()
+
 
 elif st.session_state.current_page == "💬 Study Chat":
     st.session_state.brain["current_module"] = "Study Chat"
