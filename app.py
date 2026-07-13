@@ -598,7 +598,6 @@ with st.sidebar:
     st.caption("NexusAI v1.0")
 
 # ==================== RENDER COMPONENT CONTROLLERS ====================
-```python
 if st.session_state.current_page == "📊 Dashboard":
     st.session_state.brain["current_module"] = "Dashboard"
     
