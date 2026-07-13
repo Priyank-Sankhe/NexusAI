@@ -801,7 +801,7 @@ if st.session_state.current_page == "📊 Dashboard":
             total_seconds = mission["duration"] * 60
             mission["progress"] = get_progress(elapsed_seconds, total_seconds)
 
-        m_col_left, m_col_center, m_col_right = st.columns([1.5, 1.5, 1])
+        m_col_left, m_col_center, m_col_right = st.columns(3)
         
         with m_col_left:
             st.markdown(f"""
