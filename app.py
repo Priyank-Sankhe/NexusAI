@@ -657,8 +657,6 @@ if st.session_state.current_page == "📊 Dashboard":
         if mod_key.lower() in str(cmd_current_module).lower():
             cmd_ai_status = mod_status
             break
-
-    # Premium Dashboard Command Center Layout
     
     
     # Premium Live Command Bar -> Redesigned as Dynamic Live Activity Feed
@@ -1332,19 +1330,21 @@ elif st.session_state.current_page == "🎯 GapFinder":
     current_focus_val = st.session_state.brain.get("current_focus") if st.session_state.brain.get("current_focus") else "None"
 
     # TOP COMMAND BAR
+    st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
+
     c_col1, c_col2 = st.columns([1.2, 1])
-    
+
     with c_col1:
         st.markdown("""
-        <div style="margin-bottom: 1.5rem;">
+        <div>
             <h2 style="margin: 0; font-size: 1.75rem; font-weight: 600; color: #F8FAFC;">🎯 GapFinder</h2>
             <p style="color: #94A3B8; margin: 0.25rem 0 0 0; font-size: 0.95rem;">AI-powered deliberate practice engine.</p>
         </div>
         """, unsafe_allow_html=True)
-        
+
     with c_col2:
         st.markdown(f"""
-        <div style="display: flex; justify-content: flex-end; gap: 2rem; margin-bottom: 1.5rem; text-align: right;">
+        <div style="display: flex; justify-content: flex-end; gap: 2rem; text-align: right;">
             <div>
                 <div style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600; margin-bottom: 0.25rem;">Current Focus</div>
                 <div style="font-size: 0.95rem; color: #F8FAFC; font-weight: 500;">{current_focus_val}</div>
@@ -1359,6 +1359,9 @@ elif st.session_state.current_page == "🎯 GapFinder":
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
 
     # GLASS WORKSPACE CARD
     st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
