@@ -1573,64 +1573,6 @@ elif st.session_state.current_page == "🎯 GapFinder":
 
         st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
 
-        # UNIFIED CHALLENGE OVERVIEW CARD ASSEMBLY (PREVENTS BROKEN HTML AND LEAKING SOURCE)
-        challenge_html = f"""
-        <div class="gf-glass-card" style="height: 100%; min-height: 442px; margin-bottom: 0px;">
-            <h3 style="margin: 0 0 16px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">🎯 Challenge Overview</h3>
-            
-            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 16px; margin-bottom: 16px;">
-                <span class="badge-diff" style="background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.25);">Topic: {st.session_state.current_topic}</span>
-                <span class="badge-diff" style="background: {diff_bg}; color: {diff_color}; border: 1px solid {diff_border};">Difficulty: {difficulty}</span>
-                <span class="badge-diff" style="background: rgba(255, 255, 255, 0.05); color: #94A3B8; border: 1px solid rgba(255, 255, 255, 0.1);">⏱ Est. Time: {est_time}</span>
-                <span class="badge-diff" style="background: rgba(34, 197, 94, 0.12); color: #22C55E; border: 1px solid rgba(34, 197, 94, 0.25);">Status: Active</span>
-            </div>
-            
-            <div style="margin-bottom: 16px;">
-                <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Problem Statement</div>
-                <div style="color: #E2E8F0; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">{prob_statement if prob_statement else raw_problem}</div>
-            </div>
-        """
-        
-        if example_text:
-            challenge_html += f"""
-            <div style="margin-bottom: 16px;">
-                <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Example</div>
-                <pre style="margin: 0; background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); color: #CBD5E1; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap;">{example_text.strip()}</pre>
-            </div>
-            """
-            
-        if hint_text:
-            challenge_html += f"""
-            <div style="margin-bottom: 4px;">
-                <div style="color: #38BDF8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">💡 Pro Hint</div>
-                <div style="color: #94A3B8; font-style: italic; font-size: 0.9rem; line-height: 1.5;">{hint_text}</div>
-            </div>
-            """
-
-        challenge_html += "</div>"
-
-        with ws_col_left:
-            st.markdown(challenge_html, unsafe_allow_html=True)
-
-        with ws_col_right:
-            st.markdown("""
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-top: 2px;">
-                <h3 style="margin: 0; color: #F8FAFC; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">💻 Solution Workspace</h3>
-                <span class="badge-java">Java</span>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            user_solution = st.text_area(
-                "Write your approach — pseudocode, logic, or actual code:", 
-                height=388, 
-                key="solution_input",
-                placeholder="Write Java code, pseudocode or explain your algorithm...",
-                label_visibility="collapsed"
-            )
-            
-            st.markdown("""
-                <div style="color: #64748B; font-size: 0.78rem; margin-top: 8px; font-weight: 500;">NexusAI evaluates logic correctness, asymptotic complexity and space efficiency.</div>
-            """, unsafe_allow_html=True)
 
         # --- 4. BOTTOM CONTROLS SECTION ---
         st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
