@@ -659,7 +659,7 @@ if st.session_state.current_page == "📊 Dashboard":
             break
 
     # Premium Dashboard Command Center Layout
-    st.markdown('<div class="hero-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
+    
     
     # Premium Live Command Bar
     st.markdown(f"""
@@ -736,7 +736,7 @@ if st.session_state.current_page == "📊 Dashboard":
                 
         st.markdown('</div>', unsafe_allow_html=True) # Closes inner right-side card
         
-    st.markdown('</div>', unsafe_allow_html=True) # Closes outer hero-card
+    
 
     # BOTTOM ROW: Four Premium Mini Information Cards
     b_col1, b_col2, b_col3, b_col4 = st.columns(4)
