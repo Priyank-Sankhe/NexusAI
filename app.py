@@ -638,29 +638,94 @@ if st.session_state.current_page == "📊 Dashboard":
 
     active_mission_title = mission["title"] if mission else "No Active Mission"
     progress_val = mission["progress"] if mission else 0
+    mission_status = mission["status"].title() if mission else "None"
+    current_focus_val = brain.get("current_focus") if brain.get("current_focus") else "None"
 
-    st.markdown(f"""
-    <div class="hero-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; text-align: left; margin-bottom: 1.5rem;">
-            <div>
-                <h1 style="margin: 0; font-size: 2.25rem;">{greeting}</h1>
-                <p style="color: #a8a29e; margin: 0.5rem 0 0 0; font-size: 1.1rem;">Ready to continue your Software Engineering journey?</p>
+    # Premium Dashboard Command Center Layout
+    st.markdown('<div class="hero-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
+    
+    h_col1, h_col2 = st.columns([3, 2])
+    
+    with h_col1:
+        st.markdown(f"""
+        <div style="font-size: 0.85rem; font-weight: 600; color: #b77a48; letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 0.5rem;">🧠 NEXUS AI COMMAND CENTER</div>
+        <h1 style="margin: 0 0 0.25rem 0; font-size: 2.25rem; font-weight: 700; color: #ffffff;">{greeting}</h1>
+        <p style="color: #a8a29e; font-size: 1.05rem; margin: 0 0 1.5rem 0;">Ready to continue your Software Engineering journey?</p>
+        
+        <div style="margin-bottom: 1.25rem;">
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600; margin-bottom: 0.35rem;">Current AI Status</div>
+            <div style="font-size: 0.95rem; color: #f5f1ec; background: rgba(255,255,255,0.02); border-radius: 6px; padding: 0.75rem 1rem; border: 1px solid rgba(255,255,255,0.04);">{recommendation_text}</div>
+        </div>
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600; margin-bottom: 0.15rem;">Current Focus</div>
+            <div style="font-size: 1rem; color: #ffffff; font-weight: 600;">{current_focus_val}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with h_col2:
+        st.markdown(f"""
+        <div style="text-align: right; margin-bottom: 1.5rem;">
+            <span class="status-chip" style="margin: 0;">{today_name}</span>
+            <p style="color: #a8a29e; margin: 0.35rem 0 0 0; font-size: 0.95rem; font-weight: 500;">{formatted_date}</p>
+        </div>
+        <div style="background: rgba(0,0,0,0.15); border-radius: 8px; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.02);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600;">Mission Status</span>
+                <span class="status-chip" style="margin: 0;">{mission_status}</span>
             </div>
-            <div style="text-align: right;">
-                <span class="status-chip">{today_name}</span>
-                <p style="color: #a8a29e; margin: 0.5rem 0 0 0; font-size: 0.9rem;">{formatted_date}</p>
+            <div style="margin-bottom: 0.5rem;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; margin-bottom: 0.35rem;">
+                    <span>Mission Progress</span>
+                    <span style="font-weight: 600; color: #b77a48;">{progress_val}%</span>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+        st.progress(progress_val / 100)
+        st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.25rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600;">Recommended Topic</span>
+                <span class="status-chip" style="background: rgba(183, 122, 72, 0.15); color: #d9985c; border-color: rgba(183, 122, 72, 0.3); margin: 0;">{recommended_topic if recommended_topic else "Optimal"}</span>
             </div>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 1.25rem; text-align: left; margin-bottom: 1rem;">
-            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #b77a48; font-weight: 600; margin-bottom: 0.25rem;">{status_label}</div>
-            <div style="font-size: 1rem; color: #f5f1ec;">{recommendation_text}</div>
+        """, unsafe_allow_html=True)
+        
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # BOTTOM ROW: Four Premium Mini Information Cards
+    b_col1, b_col2, b_col3, b_col4 = st.columns(4)
+    
+    with b_col1:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">📚 Problems Solved</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">{problem_count}</div>
         </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; text-align: left; background: rgba(0,0,0,0.15); padding: 0.75rem 1rem; border-radius: 8px;">
-            <span style="font-size: 0.85rem; color: #a8a29e;">Active Mission Track: <strong>{active_mission_title}</strong></span>
-            <span style="font-size: 0.85rem; color: #b77a48; font-weight: 500;">Progress: {progress_val}%</span>
+        """, unsafe_allow_html=True)
+        
+    with b_col2:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #d9985c; font-weight: 500;">🎯 Weak Topics</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #d9985c; margin-top: 0.25rem;">{weak_count}</div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+        
+    with b_col3:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">📅 Study Days</div>
+            <div style="font-size: 1.75rem; font-weight: 700; color: #ffffff; margin-top: 0.25rem;">{day_count}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+    with b_col4:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">⚡ Active Mission</div>
+            <div style="font-size: 1.05rem; font-weight: 600; color: #ffffff; margin-top: 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{active_mission_title}">{active_mission_title}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        
     st.write("")
 
     # Routing Action from Hero Recommendation
