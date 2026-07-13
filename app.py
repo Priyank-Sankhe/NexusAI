@@ -1457,14 +1457,13 @@ elif st.session_state.current_page == "🎯 GapFinder":
         </div>
         """, unsafe_allow_html=True)
 
-    # --- 2. TOPIC SELECTION CARD ---
-    st.markdown('<div class="gf-glass-card" style="padding: 20px; margin-top: 10px; margin-bottom: 24px;">', unsafe_allow_html=True)
+    # --- 2. TOPIC SELECTION ROW (REMOVED EMPTY GLASS-CARD WRAPPER & IMPROVED SPACING) ---
+    st.markdown("<div style='margin-top: 8px;'></div>", unsafe_allow_html=True)
     sel_col1, sel_col2 = st.columns([2, 1])
     with sel_col1:
         selected_topic = st.selectbox("Select Core Track Topic", topics, index=default_index, key="gap_topic", label_visibility="collapsed")
     with sel_col2:
         generate_clicked = st.button("Generate Problem", key="gen_problem", use_container_width=True, type="primary")
-    st.markdown('</div>', unsafe_allow_html=True)
 
     # Handle Logic for Generation Trigger (UNMODIFIED BUSINESS LOGIC)
     if generate_clicked:
@@ -1513,47 +1512,51 @@ elif st.session_state.current_page == "🎯 GapFinder":
         diff_border = "rgba(34, 197, 94, 0.25)" if "Easy" in difficulty else "rgba(245, 158, 11, 0.25)"
         est_time = "15 mins" if "Easy" in difficulty else "30 mins"
 
+        st.markdown("<div style='margin-top: 16px;'></div>", unsafe_allow_html=True)
         ws_col_left, ws_col_right = st.columns(2)
 
-        with ws_col_left:
-            st.markdown(f"""
-            <div class="gf-glass-card" style="height: 100%; min-height: 422px;">
-                <h3 style="margin: 0 0 16px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">⏱ Practice Session</h3>
-                
-                <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 16px; margin-bottom: 16px;">
-                    <span class="badge-diff" style="background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.25);">Topic: {st.session_state.current_topic}</span>
-                    <span class="badge-diff" style="background: {diff_bg}; color: {diff_color}; border: 1px solid {diff_border};">Difficulty: {difficulty}</span>
-                    <span class="badge-diff" style="background: rgba(255, 255, 255, 0.05); color: #94A3B8; border: 1px solid rgba(255, 255, 255, 0.1);">⏱ Est. Time: {est_time}</span>
-                    <span class="badge-diff" style="background: rgba(34, 197, 94, 0.12); color: #22C55E; border: 1px solid rgba(34, 197, 94, 0.25);">Status: Active</span>
-                </div>
-                
-                <div style="margin-bottom: 16px;">
-                    <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Problem Statement</div>
-                    <div style="color: #E2E8F0; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">{prob_statement if prob_statement else raw_problem}</div>
-                </div>
-            """, unsafe_allow_html=True)
+        # UNIFIED CHALLENGE OVERVIEW CARD ASSEMBLY (PREVENTS BROKEN HTML AND LEAKING SOURCE)
+        challenge_html = f"""
+        <div class="gf-glass-card" style="height: 100%; min-height: 442px; margin-bottom: 0px;">
+            <h3 style="margin: 0 0 16px 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 700; display: flex; align-items: center; gap: 8px;">🎯 Challenge Overview</h3>
             
-            if example_text:
-                st.markdown(f"""
-                <div style="margin-bottom: 16px;">
-                    <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Example</div>
-                    <pre style="margin: 0; background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); color: #CBD5E1; font-family: monospace; font-size: 0.9rem;">{example_text.strip()}</pre>
-                </div>
-                """, unsafe_allow_html=True)
-                
-            if hint_text:
-                st.markdown(f"""
-                <div style="margin-bottom: 4px;">
-                    <div style="color: #38BDF8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">💡 Pro Hint</div>
-                    <div style="color: #94A3B8; font-style: italic; font-size: 0.9rem; line-height: 1.5;">{hint_text}</div>
-                </div>
-                """, unsafe_allow_html=True)
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 16px; margin-bottom: 16px;">
+                <span class="badge-diff" style="background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.25);">Topic: {st.session_state.current_topic}</span>
+                <span class="badge-diff" style="background: {diff_bg}; color: {diff_color}; border: 1px solid {diff_border};">Difficulty: {difficulty}</span>
+                <span class="badge-diff" style="background: rgba(255, 255, 255, 0.05); color: #94A3B8; border: 1px solid rgba(255, 255, 255, 0.1);">⏱ Est. Time: {est_time}</span>
+                <span class="badge-diff" style="background: rgba(34, 197, 94, 0.12); color: #22C55E; border: 1px solid rgba(34, 197, 94, 0.25);">Status: Active</span>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Problem Statement</div>
+                <div style="color: #E2E8F0; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">{prob_statement if prob_statement else raw_problem}</div>
+            </div>
+        """
+        
+        if example_text:
+            challenge_html += f"""
+            <div style="margin-bottom: 16px;">
+                <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Example</div>
+                <pre style="margin: 0; background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); color: #CBD5E1; font-family: monospace; font-size: 0.9rem; white-space: pre-wrap;">{example_text.strip()}</pre>
+            </div>
+            """
+            
+        if hint_text:
+            challenge_html += f"""
+            <div style="margin-bottom: 4px;">
+                <div style="color: #38BDF8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">💡 Pro Hint</div>
+                <div style="color: #94A3B8; font-style: italic; font-size: 0.9rem; line-height: 1.5;">{hint_text}</div>
+            </div>
+            """
 
-            st.markdown("</div>", unsafe_allow_html=True)
+        challenge_html += "</div>"
+
+        with ws_col_left:
+            st.markdown(challenge_html, unsafe_allow_html=True)
 
         with ws_col_right:
             st.markdown("""
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-top: 2px;">
                 <h3 style="margin: 0; color: #F8FAFC; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">💻 Solution Workspace</h3>
                 <span class="badge-java">Java</span>
             </div>
@@ -1561,7 +1564,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
             
             user_solution = st.text_area(
                 "Write your approach — pseudocode, logic, or actual code:", 
-                height=400, 
+                height=388, 
                 key="solution_input",
                 placeholder="Write Java code, pseudocode or explain your algorithm...",
                 label_visibility="collapsed"
@@ -1572,18 +1575,18 @@ elif st.session_state.current_page == "🎯 GapFinder":
             """, unsafe_allow_html=True)
 
         # --- 4. BOTTOM CONTROLS SECTION ---
-        st.markdown("<div style='margin-top: 3rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 2.5rem;'></div>", unsafe_allow_html=True)
         
         # Section 1: Practice Timer
         timer_col1, timer_col2, timer_col3 = st.columns([1, 1.5, 1])
         with timer_col2:
             gap_timer_component()
             
-        st.markdown("<div style='margin-top: 2rem;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 1.5rem;'></div>", unsafe_allow_html=True)
         
         # Section 2: Status Badges
         st.markdown(f"""
-        <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 2.5rem;">
+        <div style="display: flex; justify-content: center; gap: 16px; margin-bottom: 2rem;">
             <span class="badge-diff" style="background: rgba(255, 255, 255, 0.05); color: #F8FAFC; border: 1px solid rgba(255, 255, 255, 0.1); font-size: 0.9rem; padding: 6px 14px;">📚 Track: {st.session_state.current_topic}</span>
             <span class="badge-diff" style="background: rgba(34, 197, 94, 0.12); color: #22C55E; border: 1px solid rgba(34, 197, 94, 0.25); font-size: 0.9rem; padding: 6px 14px;">⚡ Active</span>
             <span class="badge-diff" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; border: 1px solid rgba(14, 165, 233, 0.25); font-size: 0.9rem; padding: 6px 14px;">🧠 Copilot Attached</span>
