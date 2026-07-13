@@ -689,7 +689,7 @@ if st.session_state.current_page == "📊 Dashboard":
     with m_col2:
         st.markdown(f"""
         <div class="metric-card">
-            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 500;">Weak Topics</div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: #d9985c; font-weight: 500;">Weak Topics</div>
             <div style="font-size: 1.75rem; font-weight: 700; color: #d9985c; margin-top: 0.25rem;">{weak_count}</div>
         </div>
         """, unsafe_allow_html=True)
@@ -916,7 +916,7 @@ if st.session_state.current_page == "📊 Dashboard":
         </div>
         """, unsafe_allow_html=True)
         if st.button("Open Study Chat", key="qa_study_chat", use_container_width=True):
-            set_page("💬 NexusChat")
+            set_page("💬 Nexus Chat")
             st.rerun()
 
     with qa_col4:
