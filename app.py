@@ -661,18 +661,87 @@ if st.session_state.current_page == "📊 Dashboard":
     # Premium Dashboard Command Center Layout
     
     
-    # Premium Live Command Bar
+    # Premium Live Command Bar -> Redesigned as Dynamic Live Activity Feed
+    m_status_lower = str(mission_status).lower()
+    if "complete" in m_status_lower:
+        mission_segment = "🎯 Mission Complete"
+    elif "active" in m_status_lower or "progress" in m_status_lower or "started" in m_status_lower:
+        mission_segment = "🎯 Mission Active"
+    else:
+        mission_segment = "🎯 Mission Ready"
+
+    mod_lower = str(cmd_current_module).lower()
+    if "chat" in mod_lower or "interview" in mod_lower:
+        ai_segment = "🤖 AI Coaching"
+    elif "gap" in mod_lower or "analytics" in mod_lower or "health" in mod_lower:
+        ai_segment = "🤖 AI Analyzing"
+    else:
+        ai_segment = "🤖 AI Monitoring"
+
     st.markdown(f"""
-    <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 6px; padding: 0.65rem 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; white-space: nowrap; overflow-x: auto; font-size: 0.85rem; color: #a8a29e; width: 100%;">
-        <span style="color: #ffffff; font-weight: 600;">🧠 NexusAI</span>
-        <span style="color: rgba(255, 255, 255, 0.15); padding: 0 0.5rem;">│</span>
-        <span>📊 Current Module: <strong style="color: #ffffff;">{cmd_current_module}</strong></span>
-        <span style="color: rgba(255, 255, 255, 0.15); padding: 0 0.5rem;">│</span>
-        <span>🎯 Mission: <strong style="color: #ffffff;">{active_mission_title}</strong></span>
-        <span style="color: rgba(255, 255, 255, 0.15); padding: 0 0.5rem;">│</span>
-        <span>🟢 AI Status: <strong style="color: #4ade80;">{cmd_ai_status}</strong></span>
-        <span style="color: rgba(255, 255, 255, 0.15); padding: 0 0.5rem;">│</span>
-        <span>🕒 <strong style="color: #ffffff;">{cmd_current_time}</strong></span>
+    <style>
+    .os-container {{
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+        padding: 0.6rem 1rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        white-space: nowrap;
+        overflow-x: auto;
+        font-size: 0.85rem;
+        width: 100%;
+        box-sizing: border-box;
+        gap: 0.75rem;
+    }}
+    .os-segment {{
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.85rem;
+        background: rgba(255, 255, 255, 0.01);
+        border: 1px solid rgba(255, 255, 255, 0.03);
+        border-radius: 8px;
+        color: #a8a29e;
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }}
+    .os-segment:hover {{
+        background: rgba(255, 255, 255, 0.04);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: 0 0 14px rgba(255, 255, 255, 0.06);
+        color: #ffffff;
+    }}
+    .os-segment-highlight {{
+        color: #ffffff;
+        font-weight: 600;
+    }}
+    @keyframes status-pulse {{
+        0% {{ transform: scale(0.9); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }}
+        70% {{ transform: scale(1.1); box-shadow: 0 0 0 6px rgba(74, 222, 128, 0); }}
+        100% {{ transform: scale(0.9); box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }}
+    }}
+    .pulse-dot {{
+        width: 7px;
+        height: 7px;
+        background-color: #4ade80;
+        border-radius: 50%;
+        display: inline-block;
+        animation: status-pulse 2s infinite;
+    }}
+    </style>
+
+    <div class="os-container">
+        <div class="os-segment os-segment-highlight">🧠 NexusAI</div>
+        <div class="os-segment">📍 Dashboard</div>
+        <div class="os-segment">{mission_segment}</div>
+        <div class="os-segment" style="gap: 0.65rem;">
+            {ai_segment}
+            <span class="pulse-dot"></span>
+        </div>
+        <div class="os-segment">🕒 {cmd_current_time}</div>
     </div>
     """, unsafe_allow_html=True)
     
@@ -719,6 +788,7 @@ if st.session_state.current_page == "📊 Dashboard":
                 <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #a8a29e; font-weight: 600;">Recommended Topic</span>
                 <span class="status-chip" style="background: rgba(183, 122, 72, 0.15); color: #d9985c; border-color: rgba(183, 122, 72, 0.3); margin: 0;">{recommended_topic if recommended_topic else "Optimal"}</span>
             </div>
+        </div>
         """, unsafe_allow_html=True)
         
         # Routing Action Button (now inside the card)
