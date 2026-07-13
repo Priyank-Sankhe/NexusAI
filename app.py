@@ -1061,57 +1061,80 @@ if st.session_state.current_page == "📊 Dashboard":
 
     st.write("")
 
-    # SECTION 6: Quick Actions
-    st.markdown('<div class="section-title">⚡ Command Quick Actions</div>', unsafe_allow_html=True)
+    # SECTION 5: Command Dock
+    st.markdown('<div class="section-title" style="margin-top: 2rem; margin-bottom: 1.5rem; font-size: 1.5rem; font-weight: 600; color: #ffffff;">⚡ Command Dock</div>', unsafe_allow_html=True)
     
     qa_col1, qa_col2, qa_col3, qa_col4 = st.columns(4)
     
     with qa_col1:
         st.markdown("""
-        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
-            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">🎯</div>
-            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">GapFinder</div>
-        </div>
-        """, unsafe_allow_html=True)
-        if st.button("Practice Weak Topic", key="qa_practice_weak", use_container_width=True):
-            if recommended_topic:
-                st.session_state.brain["current_focus"] = recommended_topic
-            set_page("🎯 GapFinder")
-            st.rerun()
-
-    with qa_col2:
-        st.markdown("""
-        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
-            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">💬</div>
-            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">Nexus Chat</div>
+        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
+            <div>
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1;">💬</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.35rem;">Study Chat</div>
+                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem;">AI-powered interactive learning tutor.</div>
+            </div>
+            <div>
+                <span class="status-chip" style="background: rgba(13, 148, 136, 0.15); color: #14b8a6; border-color: rgba(13, 148, 136, 0.3); margin: 0; font-size: 0.75rem;">Ready</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
         if st.button("Open Study Chat", key="qa_study_chat", use_container_width=True):
             set_page("💬 Study Chat")
             st.rerun()
 
-    with qa_col3:
+    with qa_col2:
         st.markdown("""
-        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
-            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">⏱️</div>
-            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">FlowState</div>
+        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
+            <div>
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1;">🎯</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.35rem;">GapFinder</div>
+                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem;">Diagnose and repair knowledge gaps.</div>
+            </div>
+            <div>
+                <span class="status-chip" style="background: rgba(217, 119, 6, 0.15); color: #f59e0b; border-color: rgba(217, 119, 6, 0.3); margin: 0; font-size: 0.75rem;">Practice</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Resume FlowState", key="qa_resume_flow", use_container_width=True):
+        if st.button("Practice Now", key="qa_practice_weak", use_container_width=True):
+            if recommended_topic:
+                st.session_state.brain["current_focus"] = recommended_topic
+            set_page("🎯 GapFinder")
+            st.rerun()
+
+    with qa_col3:
+        st.markdown("""
+        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
+            <div>
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1;">⚡</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.35rem;">FlowState</div>
+                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem;">Deep focus timer & study ambient.</div>
+            </div>
+            <div>
+                <span class="status-chip" style="background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); margin: 0; font-size: 0.75rem;">Focus</span>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        if st.button("Resume Focus", key="qa_resume_flow", use_container_width=True):
             set_page("⚡ FlowState")
             st.rerun()
 
     with qa_col4:
         st.markdown("""
-        <div class="action-card" style="text-align: center; height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center; margin-bottom: 0.5rem;">
-            <div style="font-size: 1.25rem; margin-bottom: 0.25rem;">👔</div>
-            <div style="font-size: 0.8rem; font-weight: 500; color: #ffffff;">Interviews</div>
+        <div class="glass-card" style="padding: 1.5rem 1rem; text-align: center; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 0.75rem; min-height: 180px; display: flex; flex-direction: column; justify-content: space-between; align-items: center; box-sizing: border-box;">
+            <div>
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem; line-height: 1;">🎤</div>
+                <div style="font-size: 1.05rem; font-weight: 700; color: #ffffff; margin-bottom: 0.35rem;">Mock Interview</div>
+                <div style="font-size: 0.8rem; color: #a8a29e; line-height: 1.4; margin-bottom: 1rem;">Simulate technical & behavior rounds.</div>
+            </div>
+            <div>
+                <span class="status-chip" style="background: rgba(220, 38, 38, 0.15); color: #ef4444; border-color: rgba(220, 38, 38, 0.3); margin: 0; font-size: 0.75rem;">Interview</span>
+            </div>
         </div>
         """, unsafe_allow_html=True)
-        if st.button("Start Mock Interview", key="qa_start_interview", use_container_width=True):
+        if st.button("Start Interview", key="qa_start_interview", use_container_width=True):
             set_page("🎤 Mock Interview")
             st.rerun()
-
 elif st.session_state.current_page == "💬 Study Chat":
     st.session_state.brain["current_module"] = "Study Chat"
     section_header("💬", "Study Chat", "Ask anything about your Scaler journey. NexusAI remembers your learning context.", "#385C7A")
