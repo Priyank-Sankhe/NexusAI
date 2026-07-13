@@ -1397,43 +1397,43 @@ with hero_right:
 
 st.markdown("</div>", unsafe_allow_html=True)
 
-
-    # GLASS WORKSPACE CARD
+# GLASS WORKSPACE CARD
 st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
-    
+
 ws_col_left, ws_col_right = st.columns([1, 1])
-    
-    with ws_col_left:
-        st.markdown('<div style="font-size: 0.9rem; color: #94A3B8; margin-bottom: 0.5rem; font-weight: 500;">Choose the concept you want to strengthen.</div>', unsafe_allow_html=True)
-        selected_topic = st.selectbox("Select a topic:", topics, index=default_index, key="gap_topic", label_visibility="collapsed")
-        
-    with ws_col_right:
-        status_chip = '<span class="status-chip" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border-color: rgba(245, 158, 11, 0.3);">Recommended</span>' if selected_topic == recommended else '<span class="status-chip" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3);">Ready</span>'
-        
-        st.markdown(f"""
-        <div class="analytics-card" style="padding: 1.25rem; margin: 0; box-sizing: border-box;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600;">Session Status</span>
-                {status_chip}
+
+with ws_col_left:
+    st.markdown('<div style="font-size: 0.9rem; color: #94A3B8; margin-bottom: 0.5rem; font-weight: 500;">Choose the concept you want to strengthen.</div>', unsafe_allow_html=True)
+    selected_topic = st.selectbox("Select a topic:", topics, index=default_index, key="gap_topic", label_visibility="collapsed")
+
+with ws_col_right:
+    status_chip = '<span class="status-chip" style="background: rgba(245, 158, 11, 0.15); color: #F59E0B; border-color: rgba(245, 158, 11, 0.3);">Recommended</span>' if selected_topic == recommended else '<span class="status-chip" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3);">Ready</span>'
+
+    st.markdown(f"""
+    <div class="analytics-card" style="padding: 1.25rem; margin: 0; box-sizing: border-box;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <span style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94A3B8; font-weight: 600;">Session Status</span>
+            {status_chip}
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
+                <span style="font-size: 0.85rem; color: #94A3B8;">Selected Topic</span>
+                <span style="font-size: 0.9rem; color: #F8FAFC; font-weight: 500;">{selected_topic}</span>
             </div>
-            <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
-                    <span style="font-size: 0.85rem; color: #94A3B8;">Selected Topic</span>
-                    <span style="font-size: 0.9rem; color: #F8FAFC; font-weight: 500;">{selected_topic}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
-                    <span style="font-size: 0.85rem; color: #94A3B8;">Recommended Topic</span>
-                    <span style="font-size: 0.9rem; color: #38BDF8; font-weight: 500;">{recommended if recommended else "None"}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <span style="font-size: 0.85rem; color: #94A3B8;">Weak Topics Due</span>
-                    <span style="font-size: 0.9rem; color: #EF4444; font-weight: 500; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{weak_topics_str}">{weak_topics_str}</span>
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 0.5rem;">
+                <span style="font-size: 0.85rem; color: #94A3B8;">Recommended Topic</span>
+                <span style="font-size: 0.9rem; color: #38BDF8; font-weight: 500;">{recommended if recommended else "None"}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.85rem; color: #94A3B8;">Weak Topics Due</span>
+                <span style="font-size: 0.9rem; color: #EF4444; font-weight: 500; text-align: right; max-width: 60%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="{weak_topics_str}">{weak_topics_str}</span>
             </div>
         </div>
-        """, unsafe_allow_html=True)
-        
-    st.markdown('</div>', unsafe_allow_html=True)
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown('</div>', unsafe_allow_html=True)
+
 
     if st.button("Generate Problem", key="gen_problem", use_container_width=True):
         st.session_state.brain["current_focus"] = selected_topic
