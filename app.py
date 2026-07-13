@@ -1570,11 +1570,10 @@ elif st.session_state.current_page == "🎯 GapFinder":
 
         with ws_col_right:
             st.markdown("""
-            <div class="gf-glass-card" style="height: 422px; padding-bottom: 10px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <h3 style="margin: 0; color: #F8FAFC; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">💻 Solution Workspace</h3>
-                    <span class="badge-java">Java</span>
-                </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h3 style="margin: 0; color: #F8FAFC; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">💻 Solution Workspace</h3>
+                <span class="badge-java">Java</span>
+            </div>
             """, unsafe_allow_html=True)
             
             user_solution = st.text_area(
@@ -1587,9 +1586,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
             
             st.markdown("""
                 <div style="color: #64748B; font-size: 0.78rem; margin-top: 8px; font-weight: 500;">NexusAI evaluates logic correctness, asymptotic complexity and space efficiency.</div>
-            </div>
             """, unsafe_allow_html=True)
-
         # --- 5. AI EVALUATION TRIGGER & REDESIGNED DASHBOARD REPORT ---
         if st.button("Evaluate My Solution", key="eval_solution", use_container_width=True):
             if len(user_solution.strip()) < 10:
