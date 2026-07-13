@@ -1435,233 +1435,233 @@ with ws_col_right:
 st.markdown('</div>', unsafe_allow_html=True)
 
 
-    if st.button("Generate Problem", key="gen_problem", use_container_width=True):
-        st.session_state.brain["current_focus"] = selected_topic
-        st.session_state.brain["last_activity"] = "Generated a practice problem"
-        with st.spinner("Generating problem..."):
-            problem_prompt = f"Generate a DSA problem specifically and only on: {selected_topic}.\nFormat exactly like this:\nPROBLEM: [clear problem statement with example input and output]\nDIFFICULTY: [Easy/Medium]\nHINT: [one line hint, not the solution]"
-            response = client.chat.completions.create(
-                model="llama-3.1-8b-instant",
-                messages=[
-                    {"role": "system", "content": f"You are a DSA problem generator. Only generate problems about {selected_topic}."},
-                    {"role": "user", "content": problem_prompt}
-                ]
-            )
-            st.session_state.current_problem = response.choices[0].message.content
-            st.session_state.current_topic = selected_topic
+if st.button("Generate Problem", key="gen_problem", use_container_width=True):
+    st.session_state.brain["current_focus"] = selected_topic
+    st.session_state.brain["last_activity"] = "Generated a practice problem"
+    with st.spinner("Generating problem..."):
+        problem_prompt = f"Generate a DSA problem specifically and only on: {selected_topic}.\nFormat exactly like this:\nPROBLEM: [clear problem statement with example input and output]\nDIFFICULTY: [Easy/Medium]\nHINT: [one line hint, not the solution]"
+        response = client.chat.completions.create(
+            model="llama-3.1-8b-instant",
+            messages=[
+                {"role": "system", "content": f"You are a DSA problem generator. Only generate problems about {selected_topic}."},
+                {"role": "user", "content": problem_prompt}
+            ]
+        )
+        st.session_state.current_problem = response.choices[0].message.content
+        st.session_state.current_topic = selected_topic
 
-    if "current_problem" in st.session_state:
-        # TOP CHALLENGE CARD
-        st.markdown("""
-        <div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">
-            <h3 style="margin: 0 0 1.25rem 0; color: #F8FAFC; font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">📝 Current Challenge</h3>
-            <div style="max-height: 320px; overflow-y: auto; padding-right: 0.5rem; scrollbar-width: thin;">
-        """, unsafe_allow_html=True)
+if "current_problem" in st.session_state:
+    # TOP CHALLENGE CARD
+    st.markdown("""
+    <div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">
+        <h3 style="margin: 0 0 1.25rem 0; color: #F8FAFC; font-size: 1.3rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">📝 Current Challenge</h3>
+        <div style="max-height: 320px; overflow-y: auto; padding-right: 0.5rem; scrollbar-width: thin;">
+    """, unsafe_allow_html=True)
 
-        raw_problem = st.session_state.current_problem
-        lines = raw_problem.split('\n')
-        processed_html = ""
-        
-        for line in lines:
-            cleaned = line.strip()
-            if cleaned.startswith("PROBLEM:"):
-                processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: rgba(255,255,255,0.06); color: #F8FAFC; font-weight: 600; margin-bottom: 0.5rem; display: inline-block; border-color: rgba(255,255,255,0.15);">PROBLEM</span><p style="margin: 0; color: #CBD5E1; line-height: 1.6; font-size: 0.95rem;">{cleaned.replace("PROBLEM:", "").strip()}</p></div>'
-            elif cleaned.startswith("DIFFICULTY:"):
-                diff = cleaned.replace("DIFFICULTY:", "").strip()
-                bg = "rgba(34, 197, 94, 0.15)" if "Easy" in diff else "rgba(245, 158, 11, 0.15)"
-                color = "#22C55E" if "Easy" in diff else "#F59E0B"
-                border = "rgba(34, 197, 94, 0.3)" if "Easy" in diff else "rgba(245, 158, 11, 0.3)"
-                processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: {bg}; color: {color}; border-color: {border}; font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">DIFFICULTY</span><p style="margin: 0; color: #F8FAFC; font-weight: 500; font-size: 0.95rem;">{diff}</p></div>'
-            elif cleaned.startswith("HINT:"):
-                processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3); font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">HINT</span><p style="margin: 0; color: #94A3B8; font-style: italic; line-height: 1.6; font-size: 0.95rem;">{cleaned.replace("HINT:", "").strip()}</p></div>'
-            elif "Example" in cleaned or "EXAMPLE:" in cleaned:
-                processed_html += f'<div style="margin-bottom: 1rem;"><span class="status-chip" style="background: rgba(255,255,255,0.06); color: #94A3B8; border-color: rgba(255,255,255,0.1); font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">EXAMPLE</span><p style="margin: 0; color: #CBD5E1; font-family: monospace; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.9rem; line-height: 1.5;">{cleaned}</p></div>'
-            else:
-                if cleaned:
-                    processed_html += f'<p style="margin: 0 0 0.75rem 0; color: #CBD5E1; line-height: 1.6; font-size: 0.95rem;">{cleaned}</p>'
-
-        if "PROBLEM:" in raw_problem:
-            st.markdown(processed_html, unsafe_allow_html=True)
+    raw_problem = st.session_state.current_problem
+    lines = raw_problem.split('\n')
+    processed_html = ""
+    
+    for line in lines:
+        cleaned = line.strip()
+        if cleaned.startswith("PROBLEM:"):
+            processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: rgba(255,255,255,0.06); color: #F8FAFC; font-weight: 600; margin-bottom: 0.5rem; display: inline-block; border-color: rgba(255,255,255,0.15);">PROBLEM</span><p style="margin: 0; color: #CBD5E1; line-height: 1.6; font-size: 0.95rem;">{cleaned.replace("PROBLEM:", "").strip()}</p></div>'
+        elif cleaned.startswith("DIFFICULTY:"):
+            diff = cleaned.replace("DIFFICULTY:", "").strip()
+            bg = "rgba(34, 197, 94, 0.15)" if "Easy" in diff else "rgba(245, 158, 11, 0.15)"
+            color = "#22C55E" if "Easy" in diff else "#F59E0B"
+            border = "rgba(34, 197, 94, 0.3)" if "Easy" in diff else "rgba(245, 158, 11, 0.3)"
+            processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: {bg}; color: {color}; border-color: {border}; font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">DIFFICULTY</span><p style="margin: 0; color: #F8FAFC; font-weight: 500; font-size: 0.95rem;">{diff}</p></div>'
+        elif cleaned.startswith("HINT:"):
+            processed_html += f'<div style="margin-bottom: 1.25rem;"><span class="status-chip" style="background: rgba(56, 189, 248, 0.15); color: #38BDF8; border-color: rgba(56, 189, 248, 0.3); font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">HINT</span><p style="margin: 0; color: #94A3B8; font-style: italic; line-height: 1.6; font-size: 0.95rem;">{cleaned.replace("HINT:", "").strip()}</p></div>'
+        elif "Example" in cleaned or "EXAMPLE:" in cleaned:
+            processed_html += f'<div style="margin-bottom: 1rem;"><span class="status-chip" style="background: rgba(255,255,255,0.06); color: #94A3B8; border-color: rgba(255,255,255,0.1); font-weight: 600; margin-bottom: 0.5rem; display: inline-block;">EXAMPLE</span><p style="margin: 0; color: #CBD5E1; font-family: monospace; background: rgba(0,0,0,0.2); padding: 0.75rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06); font-size: 0.9rem; line-height: 1.5;">{cleaned}</p></div>'
         else:
-            st.markdown(raw_problem)
+            if cleaned:
+                processed_html += f'<p style="margin: 0 0 0.75rem 0; color: #CBD5E1; line-height: 1.6; font-size: 0.95rem;">{cleaned}</p>'
 
+    if "PROBLEM:" in raw_problem:
+        st.markdown(processed_html, unsafe_allow_html=True)
+    else:
+        st.markdown(raw_problem)
+
+    st.markdown("""
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # TWO EQUAL HEIGHT WORKSPACE COLUMNS
+    ws_col_left, ws_col_right = st.columns(2)
+
+    with ws_col_left:
         st.markdown("""
+        <div class="glass-card" style="padding: 1.75rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1.5rem 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">⏱ Practice Session</h3>
+        """, unsafe_allow_html=True)
+        
+        gap_timer_component()
+        
+        st.markdown(f"""
+            <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06);">
+                <span class="status-chip" style="background: rgba(255,255,255,0.06); color: #F8FAFC; border-color: rgba(255,255,255,0.1); margin: 0;">📚 {st.session_state.current_topic}</span>
+                <span class="status-chip" style="background: rgba(56, 189, 248, 0.12); color: #38BDF8; border-color: rgba(56, 189, 248, 0.25); margin: 0;">⚡ Active</span>
+                <span class="status-chip" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; border-color: rgba(14, 165, 233, 0.25); margin: 0;">🧠 AI Ready</span>
             </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # TWO EQUAL HEIGHT WORKSPACE COLUMNS
-        ws_col_left, ws_col_right = st.columns(2)
+    with ws_col_right:
+        st.markdown("""
+        <div class="glass-card" style="padding: 1.75rem; margin-bottom: 1.5rem;">
+            <h3 style="margin: 0 0 1rem 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">💻 Solution Workspace</h3>
+        """, unsafe_allow_html=True)
+        
+        user_solution = st.text_area(
+            "Write your approach — pseudocode, logic, or actual code:", 
+            height=320, 
+            key="solution_input",
+            placeholder="Write Java code, pseudocode or explain your algorithm...",
+            label_visibility="collapsed"
+        )
+        
+        st.markdown("""
+            <div style="color: #94A3B8; font-size: 0.8rem; margin-top: 0.75rem; font-weight: 500;">NexusAI evaluates correctness, efficiency and reasoning.</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        with ws_col_left:
-            st.markdown("""
-            <div class="glass-card" style="padding: 1.75rem; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0 0 1.5rem 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">⏱ Practice Session</h3>
-            """, unsafe_allow_html=True)
-            
-            gap_timer_component()
-            
-            st.markdown(f"""
-                <div style="margin-top: 1.5rem; display: flex; flex-wrap: wrap; gap: 0.5rem; padding-top: 1.5rem; border-top: 1px solid rgba(255,255,255,0.06);">
-                    <span class="status-chip" style="background: rgba(255,255,255,0.06); color: #F8FAFC; border-color: rgba(255,255,255,0.1); margin: 0;">📚 {st.session_state.current_topic}</span>
-                    <span class="status-chip" style="background: rgba(56, 189, 248, 0.12); color: #38BDF8; border-color: rgba(56, 189, 248, 0.25); margin: 0;">⚡ Active</span>
-                    <span class="status-chip" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; border-color: rgba(14, 165, 233, 0.25); margin: 0;">🧠 AI Ready</span>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+    # EVALUATION ACTION TRIGGER
+    if st.button("Evaluate My Solution", key="eval_solution", use_container_width=True):
+        if len(user_solution.strip()) < 10:
+            st.warning("Write an actual solution attempt before evaluating.")
+        else:
+            with st.spinner("Evaluating..."):
+                eval_prompt = f"Problem: {st.session_state.current_problem}\n\nStudent's solution: {user_solution}\n\nEvaluate strictly:\n1. CORRECT: What did they get right?\n2. MISSING: What's wrong or missing?\n3. OPTIMAL SOLUTION: Show the correct approach\n4. SCORE: 0 (wrong), 1 (partial), 2 (correct) — number only\n5. VERDICT: \"Move on\" or \"Review this topic\"\n\nBe strict. Do not give 2 unless genuinely correct."
+                eval_response = client.chat.completions.create(
+                    model="llama-3.3-70b-specdec",
+                    messages=[
+                        {"role": "system", "content": "You are a strict DSA interviewer. Evaluate honestly."},
+                        {"role": "user", "content": eval_prompt}
+                    ]
+                )
+                evaluation = eval_response.choices[0].message.content
 
-        with ws_col_right:
-            st.markdown("""
-            <div class="glass-card" style="padding: 1.75rem; margin-bottom: 1.5rem;">
-                <h3 style="margin: 0 0 1rem 0; color: #F8FAFC; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">💻 Solution Workspace</h3>
-            """, unsafe_allow_html=True)
-            
-            user_solution = st.text_area(
-                "Write your approach — pseudocode, logic, or actual code:", 
-                height=320, 
-                key="solution_input",
-                placeholder="Write Java code, pseudocode or explain your algorithm...",
-                label_visibility="collapsed"
-            )
-            
-            st.markdown("""
-                <div style="color: #94A3B8; font-size: 0.8rem; margin-top: 0.75rem; font-weight: 500;">NexusAI evaluates correctness, efficiency and reasoning.</div>
-            </div>
-            """, unsafe_allow_html=True)
+                # --- CORE SCORE CALCULATION (UNMODIFIED) ---
+                score = 1
+                for line in evaluation.split("\n"):
+                    if "SCORE:" in line:
+                        if "0" in line: score = 0
+                        elif "2" in line: score = 2
+                        break
 
-        # EVALUATION ACTION TRIGGER
-        if st.button("Evaluate My Solution", key="eval_solution", use_container_width=True):
-            if len(user_solution.strip()) < 10:
-                st.warning("Write an actual solution attempt before evaluating.")
-            else:
-                with st.spinner("Evaluating..."):
-                    eval_prompt = f"Problem: {st.session_state.current_problem}\n\nStudent's solution: {user_solution}\n\nEvaluate strictly:\n1. CORRECT: What did they get right?\n2. MISSING: What's wrong or missing?\n3. OPTIMAL SOLUTION: Show the correct approach\n4. SCORE: 0 (wrong), 1 (partial), 2 (correct) — number only\n5. VERDICT: \"Move on\" or \"Review this topic\"\n\nBe strict. Do not give 2 unless genuinely correct."
-                    eval_response = client.chat.completions.create(
-                        model="llama-3.3-70b-specdec",
-                        messages=[
-                            {"role": "system", "content": "You are a strict DSA interviewer. Evaluate honestly."},
-                            {"role": "user", "content": eval_prompt}
-                        ]
-                    )
-                    evaluation = eval_response.choices[0].message.content
+                # --- PARSING HELPERS FOR PREMIUM REVIEW DASHBOARD ---
+                def extract_section(text, current_marker, next_markers):
+                    try:
+                        start_idx = text.find(current_marker)
+                        if start_idx == -1:
+                            return "No data available."
+                        start_idx += len(current_marker)
+                        end_idx = len(text)
+                        for marker in next_markers:
+                            m_idx = text.find(marker, start_idx)
+                            if m_idx != -1 and m_idx < end_idx:
+                                end_idx = m_idx
+                        return text[start_idx:end_idx].strip().strip("*: \n\r")
+                    except:
+                        return "Error parsing section data."
 
-                    # --- CORE SCORE CALCULATION (UNMODIFIED) ---
-                    score = 1
-                    for line in evaluation.split("\n"):
-                        if "SCORE:" in line:
-                            if "0" in line: score = 0
-                            elif "2" in line: score = 2
-                            break
+                correct_content = extract_section(evaluation, "CORRECT:", ["MISSING:", "OPTIMAL SOLUTION:", "SCORE:", "VERDICT:"])
+                missing_content = extract_section(evaluation, "MISSING:", ["OPTIMAL SOLUTION:", "SCORE:", "VERDICT:", "CORRECT:"])
+                optimal_content = extract_section(evaluation, "OPTIMAL SOLUTION:", ["SCORE:", "VERDICT:", "CORRECT:", "MISSING:"])
 
-                    # --- PARSING HELPERS FOR PREMIUM REVIEW DASHBOARD ---
-                    def extract_section(text, current_marker, next_markers):
-                        try:
-                            start_idx = text.find(current_marker)
-                            if start_idx == -1:
-                                return "No data available."
-                            start_idx += len(current_marker)
-                            end_idx = len(text)
-                            for marker in next_markers:
-                                m_idx = text.find(marker, start_idx)
-                                if m_idx != -1 and m_idx < end_idx:
-                                    end_idx = m_idx
-                            return text[start_idx:end_idx].strip().strip("*: \n\r")
-                        except:
-                            return "Error parsing section data."
+                # --- PREMIUM AI REVIEW DASHBOARD DISPLAY (V2 GLASSMORPHIC STYLING) ---
+                st.markdown("""
+                <style>
+                .review-header-v2 { font-size: 26px; font-weight: 800; color: #F8FAFC; margin-top: 20px; margin-bottom: 15px; }
+                .score-card-v2 { border-radius: 16px; padding: 22px; margin-bottom: 25px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+                .score-title-v2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+                .score-meta-v2 { color: #CBD5E1; font-size: 14px; opacity: 0.9; }
+                .glass-card-v2 { background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 20px; margin-bottom: 16px; backdrop-filter: blur(10px); box-shadow: inset 0 1px rgba(255,255,255,.05); }
+                .card-title-v2 { font-size: 16px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+                .card-content-v2 { color: #CBD5E1; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
+                .reco-card-v2 { border-radius: 12px; padding: 16px; margin-top: 10px; margin-bottom: 20px; font-weight: 600; font-size: 14px; backdrop-filter: blur(10px); }
+                </style>
+                """, unsafe_allow_html=True)
 
-                    correct_content = extract_section(evaluation, "CORRECT:", ["MISSING:", "OPTIMAL SOLUTION:", "SCORE:", "VERDICT:"])
-                    missing_content = extract_section(evaluation, "MISSING:", ["OPTIMAL SOLUTION:", "SCORE:", "VERDICT:", "CORRECT:"])
-                    optimal_content = extract_section(evaluation, "OPTIMAL SOLUTION:", ["SCORE:", "VERDICT:", "CORRECT:", "MISSING:"])
+                # Heading
+                st.markdown('<div class="review-header-v2">🤖 NexusAI Review</div>', unsafe_allow_html=True)
 
-                    # --- PREMIUM AI REVIEW DASHBOARD DISPLAY (V2 GLASSMORPHIC STYLING) ---
-                    st.markdown("""
-                    <style>
-                    .review-header-v2 { font-size: 26px; font-weight: 800; color: #F8FAFC; margin-top: 20px; margin-bottom: 15px; }
-                    .score-card-v2 { border-radius: 16px; padding: 22px; margin-bottom: 25px; backdrop-filter: blur(14px); box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-                    .score-title-v2 { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
-                    .score-meta-v2 { color: #CBD5E1; font-size: 14px; opacity: 0.9; }
-                    .glass-card-v2 { background: rgba(30, 41, 59, 0.45); border: 1px solid rgba(255, 255, 255, 0.06); border-radius: 14px; padding: 20px; margin-bottom: 16px; backdrop-filter: blur(10px); box-shadow: inset 0 1px rgba(255,255,255,.05); }
-                    .card-title-v2 { font-size: 16px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-                    .card-content-v2 { color: #CBD5E1; font-size: 14px; line-height: 1.6; white-space: pre-wrap; }
-                    .reco-card-v2 { border-radius: 12px; padding: 16px; margin-top: 10px; margin-bottom: 20px; font-weight: 600; font-size: 14px; backdrop-filter: blur(10px); }
-                    </style>
-                    """, unsafe_allow_html=True)
+                # Score Card Rendering
+                current_date = datetime.now().strftime("%Y-%m-%d")
+                topic_name = st.session_state.current_topic
 
-                    # Heading
-                    st.markdown('<div class="review-header-v2">🤖 NexusAI Review</div>', unsafe_allow_html=True)
-
-                    # Score Card Rendering
-                    current_date = datetime.now().strftime("%Y-%m-%d")
-                    topic_name = st.session_state.current_topic
-
-                    if score == 2:
-                        st.markdown(f"""
-                        <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(34, 197, 94, 0.35);">
-                            <div class="score-title-v2" style="color: #22C55E;">✅ Excellent</div>
-                            <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    elif score == 1:
-                        st.markdown(f"""
-                        <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(245, 158, 11, 0.35);">
-                            <div class="score-title-v2" style="color: #F59E0B;">⚠ Partial Solution</div>
-                            <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                        <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(239, 68, 68, 0.35);">
-                            <div class="score-title-v2" style="color: #EF4444;">❌ Needs Improvement</div>
-                            <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-                    # Three Dynamic Glass Cards
+                if score == 2:
                     st.markdown(f"""
-                    <div class="glass-card-v2">
-                        <div class="card-title-v2" style="color: #22C55E;">✓ Strengths</div>
-                        <div class="card-content-v2">{correct_content}</div>
+                    <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(34, 197, 94, 0.35);">
+                        <div class="score-title-v2" style="color: #22C55E;">✅ Excellent</div>
+                        <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
                     </div>
-                    <div class="glass-card-v2">
-                        <div class="card-title-v2" style="color: #F59E0B;">⚠ Improvements</div>
-                        <div class="card-content-v2">{missing_content}</div>
+                    """, unsafe_allow_html=True)
+                elif score == 1:
+                    st.markdown(f"""
+                    <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(245, 158, 11, 0.35);">
+                        <div class="score-title-v2" style="color: #F59E0B;">⚠ Partial Solution</div>
+                        <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
                     </div>
-                    <div class="glass-card-v2">
-                        <div class="card-title-v2" style="color: #38BDF8;">🚀 Optimal Solution</div>
-                        <div class="card-content-v2">{optimal_content}</div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div class="score-card-v2" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(15, 23, 42, 0.6)); border: 1px solid rgba(239, 68, 68, 0.35);">
+                        <div class="score-title-v2" style="color: #EF4444;">❌ Needs Improvement</div>
+                        <div class="score-meta-v2"><b>Score:</b> {score}/2 &nbsp;|&nbsp; <b>Topic:</b> {topic_name} &nbsp;|&nbsp; <b>Date:</b> {current_date}</div>
                     </div>
                     """, unsafe_allow_html=True)
 
-                    # Recommendation Card
-                    if score <= 1:
-                        st.markdown("""
-                        <div class="reco-card-v2" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #EF4444;">
-                            📌 Recommendation: Review this topic again.
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown("""
-                        <div class="reco-card-v2" style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22C55E;">
-                            📌 Recommendation: Ready to move on.
-                        </div>
-                        """, unsafe_allow_html=True)
+                # Three Dynamic Glass Cards
+                st.markdown(f"""
+                <div class="glass-card-v2">
+                    <div class="card-title-v2" style="color: #22C55E;">✓ Strengths</div>
+                    <div class="card-content-v2">{correct_content}</div>
+                </div>
+                <div class="glass-card-v2">
+                    <div class="card-title-v2" style="color: #F59E0B;">⚠ Improvements</div>
+                    <div class="card-content-v2">{missing_content}</div>
+                </div>
+                <div class="glass-card-v2">
+                    <div class="card-title-v2" style="color: #38BDF8;">🚀 Optimal Solution</div>
+                    <div class="card-content-v2">{optimal_content}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-                    # --- BACKEND LOGIC & INTEGRATIONS (UNMODIFIED) ---
-                    st.session_state.db["gap_log"].append({
-                        "type": "gap_entry",
-                        "topic": st.session_state.current_topic,
-                        "date": datetime.now().strftime("%Y-%m-%d"),
-                        "score": score,
-                        "evaluation": evaluation
-                    })
-                    save_gap()
-                    update_recommended_topic()
+                # Recommendation Card
+                if score <= 1:
+                    st.markdown("""
+                    <div class="reco-card-v2" style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); color: #EF4444;">
+                        📌 Recommendation: Review this topic again.
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown("""
+                    <div class="reco-card-v2" style="background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.25); color: #22C55E;">
+                        📌 Recommendation: Ready to move on.
+                    </div>
+                    """, unsafe_allow_html=True)
 
-                    if score == 2: st.session_state.brain["current_focus"] = None
-                    else: st.session_state.brain["current_focus"] = st.session_state.current_topic
+                # --- BACKEND LOGIC & INTEGRATIONS (UNMODIFIED) ---
+                st.session_state.db["gap_log"].append({
+                    "type": "gap_entry",
+                    "topic": st.session_state.current_topic,
+                    "date": datetime.now().strftime("%Y-%m-%d"),
+                    "score": score,
+                    "evaluation": evaluation
+                })
+                save_gap()
+                update_recommended_topic()
 
-                    if score <= 1: st.error(f"⚠️ {st.session_state.current_topic} flagged as weak. Will resurface in 7 days.")
-                    else: st.success(f"✅ {st.session_state.current_topic} marked solid.")
+                if score == 2: st.session_state.brain["current_focus"] = None
+                else: st.session_state.brain["current_focus"] = st.session_state.current_topic
+
+                if score <= 1: st.error(f"⚠️ {st.session_state.current_topic} flagged as weak. Will resurface in 7 days.")
+                else: st.success(f"✅ {st.session_state.current_topic} marked solid.")
                     
 elif st.session_state.current_page == "⚡ FlowState":
 
