@@ -1361,7 +1361,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
         """, unsafe_allow_html=True)
 
     # GLASS WORKSPACE CARD
-    st.markdown('<div class="glass-card" style="padding: 2rem; margin-bottom: 1.5rem;">', unsafe_allow_html=True)
+    
     
     ws_col_left, ws_col_right = st.columns([1, 1])
     
@@ -1395,7 +1395,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
         </div>
         """, unsafe_allow_html=True)
         
-    st.markdown('</div>', unsafe_allow_html=True)
+    
 
     if st.button("Generate Problem", key="gen_problem", use_container_width=True):
         st.session_state.brain["current_focus"] = selected_topic
