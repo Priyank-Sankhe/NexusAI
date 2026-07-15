@@ -1353,6 +1353,15 @@ elif st.session_state.current_page == "🎯 GapFinder":
         backdrop-filter: blur(10px);
         box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
     }
+    .compact-glass-card {
+        background: rgba(30, 41, 59, 0.45);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 12px;
+        padding: 14px 18px;
+        margin-bottom: 12px;
+        backdrop-filter: blur(10px);
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    }
     .gf-metric-label {
         font-size: 0.75rem;
         text-transform: uppercase;
@@ -1382,6 +1391,28 @@ elif st.session_state.current_page == "🎯 GapFinder":
         font-size: 0.8rem;
         font-weight: 600;
         display: inline-block;
+    }
+    .flex-between {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .section-title {
+        color: #94A3B8;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .compact-pre {
+        margin: 0;
+        background: rgba(15, 23, 42, 0.5);
+        padding: 10px;
+        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.05);
+        color: #CBD5E1;
+        font-family: monospace;
+        font-size: 0.85rem;
     }
     
     /* Evaluation Dashboard Styling */
@@ -1441,7 +1472,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
         
     with header_col2:
         st.markdown(f"""
-        <div style="display: flex; justify-content: flex-end; gap: 1.75rem; text-align: right; background: rgba(30, 41, 59, 0.3); padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04);">
+        <div class="flex-between" style="justify-content: flex-end; gap: 1.75rem; text-align: right; background: rgba(30, 41, 59, 0.3); padding: 12px 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.04);">
             <div>
                 <div class="gf-metric-label">Current Focus</div>
                 <div class="gf-metric-value" style="color: #F8FAFC;">{current_focus_val}</div>
@@ -1482,7 +1513,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
             st.session_state.current_problem = response.choices[0].message.content
             st.session_state.current_topic = selected_topic
 
-    # --- 3. CURRENT CHALLENGE CARD ---
+    # --- 3 & 4. SIDE-BY-SIDE CHALLENGE & WORKSPACE (LEETCODE STYLE) ---
     if "current_problem" in st.session_state:
         raw_problem = st.session_state.current_problem
         lines = raw_problem.split('\n')
@@ -1513,82 +1544,72 @@ elif st.session_state.current_page == "🎯 GapFinder":
         diff_border = "rgba(34, 197, 94, 0.25)" if "Easy" in difficulty else "rgba(245, 158, 11, 0.25)"
         est_time = "15 mins" if "Easy" in difficulty else "30 mins"
 
-        # Premium Interview Layout Render
-        st.markdown(f"""
-        <div class="gf-glass-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 14px; margin-bottom: 16px;">
-                <div style="font-size: 1.15rem; font-weight: 700; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">📝 Current Challenge</div>
-                <div style="display: flex; gap: 8px; align-items: center;">
-                    <span class="badge-diff" style="background: {diff_bg}; color: {diff_color}; border: 1px solid {diff_border};">Difficulty: {difficulty}</span>
-                    <span class="badge-diff" style="background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.25);">Topic: {st.session_state.current_topic}</span>
+        # LeetCode style split view
+        prob_col, solve_col = st.columns(2)
+
+        with prob_col:
+            st.markdown(f"""
+            <div class="compact-glass-card">
+                <div class="flex-between" style="border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px; margin-bottom: 10px;">
+                    <div style="font-size: 1.15rem; font-weight: 700; color: #F8FAFC; display: flex; align-items: center; gap: 8px;">📝 Current Challenge</div>
                     <span class="badge-diff" style="background: rgba(255, 255, 255, 0.05); color: #94A3B8; border: 1px solid rgba(255, 255, 255, 0.1);">⏱ Est. Time: {est_time}</span>
                 </div>
-            </div>
-            <div style="margin-bottom: 16px;">
-                <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">Problem Statement</div>
-                <div style="color: #E2E8F0; line-height: 1.6; font-size: 0.95rem; white-space: pre-wrap;">{prob_statement if prob_statement else raw_problem}</div>
-            </div>
-        """, unsafe_allow_html=True)
-        
-        if example_text:
-            st.markdown(f"""
-            <div style="margin-bottom: 16px;">
-                <div style="color: #94A3B8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 6px;">Example</div>
-                <pre style="margin: 0; background: rgba(15, 23, 42, 0.5); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); color: #CBD5E1; font-family: monospace; font-size: 0.9rem;">{example_text.strip()}</pre>
-            </div>
-            """, unsafe_allow_html=True)
-            
-        if hint_text:
-            st.markdown(f"""
-            <div style="margin-bottom: 4px;">
-                <div style="color: #38BDF8; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; margin-bottom: 4px;">💡 Pro Hint</div>
-                <div style="color: #94A3B8; font-style: italic; font-size: 0.9rem; line-height: 1.5;">{hint_text}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        st.markdown("</div>", unsafe_allow_html=True)
-
-        # --- 4. SOLUTION WORKSPACE COLS ---
-        ws_col_left, ws_col_right = st.columns(2)
-
-        with ws_col_left:
-            st.markdown("""
-            <div class="gf-glass-card" style="height: 422px;">
-                <h3 style="margin: 0 0 16px 0; color: #F8FAFC; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">⏱ Practice Session</h3>
-            """, unsafe_allow_html=True)
-            
-            gap_timer_component()
-            
-            st.markdown(f"""
-                <div style="margin-top: 40px; display: flex; flex-wrap: wrap; gap: 8px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.06);">
-                    <span class="badge-diff" style="background: rgba(255, 255, 255, 0.05); color: #F8FAFC; border: 1px solid rgba(255, 255, 255, 0.1);">📚 Track: {st.session_state.current_topic}</span>
-                    <span class="badge-diff" style="background: rgba(34, 197, 94, 0.12); color: #22C55E; border: 1px solid rgba(34, 197, 94, 0.25);">⚡ Active</span>
-                    <span class="badge-diff" style="background: rgba(14, 165, 233, 0.12); color: #0EA5E9; border: 1px solid rgba(14, 165, 233, 0.25);">🧠 Copilot Attached</span>
+                <div>
+                    <div class="section-title">Problem Statement</div>
+                    <div style="color: #E2E8F0; line-height: 1.4; font-size: 0.95rem; white-space: pre-wrap;">{prob_statement if prob_statement else raw_problem}</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
+            
+            if example_text:
+                st.markdown(f"""
+                <div class="compact-glass-card">
+                    <div class="section-title">Example</div>
+                    <pre class="compact-pre">{example_text.strip()}</pre>
+                </div>
+                """, unsafe_allow_html=True)
+                
+            if hint_text:
+                st.markdown(f"""
+                <div class="compact-glass-card" style="border: 1px solid rgba(56, 189, 248, 0.15);">
+                    <div class="section-title" style="color: #38BDF8;">💡 Pro Hint</div>
+                    <div style="color: #94A3B8; font-style: italic; font-size: 0.9rem; line-height: 1.4;">{hint_text}</div>
+                </div>
+                """, unsafe_allow_html=True)
 
-        with ws_col_right:
-            st.markdown("""
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        with solve_col:
+            st.markdown(f"""
+            <div class="flex-between" style="margin-bottom: 12px; background: rgba(15, 23, 42, 0.4); padding: 12px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06);">
                 <h3 style="margin: 0; color: #F8FAFC; font-size: 1.1rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">💻 Solution Workspace</h3>
-                <span class="badge-java">Java</span>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <span class="badge-java">Java</span>
+                    <span class="badge-diff" style="background: {diff_bg}; color: {diff_color}; border: 1px solid {diff_border};">{difficulty}</span>
+                    <span class="badge-diff" style="background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.25);">{st.session_state.current_topic}</span>
+                </div>
             </div>
             """, unsafe_allow_html=True)
+            
+            # Timer injected inside the workspace
+            gap_timer_component()
+            
+            st.markdown("<div style='margin-top: 12px;'></div>", unsafe_allow_html=True)
             
             user_solution = st.text_area(
                 "Write your approach — pseudocode, logic, or actual code:", 
-                height=300, 
+                height=320, 
                 key="solution_input",
                 placeholder="Write Java code, pseudocode or explain your algorithm...",
                 label_visibility="collapsed"
             )
             
             st.markdown("""
-                <div style="color: #64748B; font-size: 0.78rem; margin-top: 8px; font-weight: 500;">NexusAI evaluates logic correctness, asymptotic complexity and space efficiency.</div>
+                <div style="color: #64748B; font-size: 0.78rem; margin-top: 8px; margin-bottom: 12px; font-weight: 500;">NexusAI evaluates logic correctness, asymptotic complexity and space efficiency.</div>
             """, unsafe_allow_html=True)
+            
+            eval_button = st.button("Evaluate My Solution", key="eval_solution", use_container_width=True)
+
         # --- 5. AI EVALUATION TRIGGER & REDESIGNED DASHBOARD REPORT ---
-        if st.button("Evaluate My Solution", key="eval_solution", use_container_width=True):
+        if eval_button:
             if len(user_solution.strip()) < 10:
                 st.markdown("""
                 <div class="custom-alert" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.25); color: #F59E0B;">
