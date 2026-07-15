@@ -1620,7 +1620,7 @@ elif st.session_state.current_page == "🎯 GapFinder":
                 with st.spinner("Evaluating architecture performance..."):
                     eval_prompt = f"Problem: {st.session_state.current_problem}\n\nStudent's solution: {user_solution}\n\nEvaluate strictly:\n1. CORRECT: What did they get right?\n2. MISSING: What's wrong or missing?\n3. OPTIMAL SOLUTION: Show the correct approach\n4. SCORE: 0 (wrong), 1 (partial), 2 (correct) — number only\n5. VERDICT: \"Move on\" or \"Review this topic\"\n\nBe strict. Do not give 2 unless genuinely correct."
                     eval_response = client.chat.completions.create(
-                        model="llama-3.3-70b-specdec",
+                        model="llama-3.1-8b-instant",
                         messages=[
                             {"role": "system", "content": "You are a strict DSA interviewer. Evaluate honestly."},
                             {"role": "user", "content": eval_prompt}
