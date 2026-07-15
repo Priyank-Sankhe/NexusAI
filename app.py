@@ -1452,10 +1452,7 @@ SCOPE: Only answer questions about software engineering, DSA, Java, Python, syst
             with st.spinner("🧠 NexusAI is reasoning..."):
                 response = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
-                    messages=[
-                        {"role": "system", "content": system_context},
-                        {"role": "user", "content": active_input}
-                    ]
+                    messages=[{"role": "system", "content": system_context}] + st.session_state.messages
                 )
                 reply = response.choices[0].message.content
                 st.write(reply)
