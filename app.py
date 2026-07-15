@@ -535,33 +535,163 @@ def initialize_session():
 initialize_session()
 
 # ==================== MISSION ENGINE ====================
+from datetime import datetime
+
 def update_recommended_topic():
-    weak_topics = get_weak_topics(st.session_state.db["gap_log"])
-    if weak_topics:
-        weakest = sorted(weak_topics, key=lambda x: x["days_since"], reverse=True)[0]
-        st.session_state.brain["recommended_topic"] = weakest["topic"]
-    else:
+    try:
+        gap_log = st.session_state.db.get("gap_log", [])
+        if 'get_weak_topics' in globals():
+            weak_topics = get_weak_topics(gap_log)
+            if weak_topics:
+                weakest = sorted(weak_topics, key=lambda x: x.get("days_since", 0), reverse=True)[0]
+                st.session_state.brain["recommended_topic"] = weakest.get("topic")
+                return
+        st.session_state.brain["recommended_topic"] = None
+    except Exception:
         st.session_state.brain["recommended_topic"] = None
 
-update_recommended_topic()
+def sync_mission():
+    curr = st.session_state.db.get("current_mission")
+    if not curr:
+        return
+    
+    # Validate mission fields safely using defaults
+    curr.setdefault("title", "Daily Practice")
+    curr.setdefault("date", datetime.now().strftime("%Y-%m-%d"))
+    curr.setdefault("progress", 0)
+    curr.setdefault("duration", 25)
+    curr.setdefault("status", globals().get("MISSION_PENDING", "Pending"))
+    curr.setdefault("reason", "")
+    curr.setdefault("started_at", None)
+    curr.setdefault("completed_at", None)
+    
+    # Ensure mission progress remains between 0 and 100
+    try:
+        curr["progress"] = max(0, min(100, int(curr.get("progress", 0))))
+    except (ValueError, TypeError):
+        curr["progress"] = 0
+        
+    # Sync matching mission inside the missions database list
+    missions = st.session_state.db.get("missions", [])
+    updated = False
+    for i, m in enumerate(missions):
+        if m.get("title") == curr.get("title") and m.get("date") == curr.get("date"):
+            missions[i] = curr
+            updated = True
+            break
+    if not updated:
+        missions.append(curr)
+        
+    st.session_state.db["missions"] = missions
+    st.session_state.db["current_mission"] = curr
 
-if st.session_state.db["current_mission"] is None:
-    mission = generate_daily_mission()
-    if mission:
-        st.session_state.db["missions"].append(mission)
-        st.session_state.db["current_mission"] = mission
-        st.session_state.brain["current_focus"] = mission["title"]
-        st.session_state.brain["recommended_action"] = "Start Mission"
+def sync_brain():
+    curr = st.session_state.db.get("current_mission")
+    brain = st.session_state.get("brain", {})
+    
+    if curr and curr.get("status") != globals().get("MISSION_COMPLETED", "Completed"):
+        brain["current_focus"] = curr.get("title")
+        if curr.get("started_at"):
+            brain["recommended_action"] = "Continue Mission"
+        else:
+            brain["recommended_action"] = "Start Mission"
+    else:
+        brain["current_focus"] = None
+        brain["recommended_action"] = "Find Weakness"
+        
+    update_recommended_topic()
+    st.session_state.brain = brain
+
+def update_mission_progress(progress_delta):
+    curr = st.session_state.db.get("current_mission")
+    if not curr:
+        return
+        
+    try:
+        current_progress = int(curr.get("progress", 0))
+    except (ValueError, TypeError):
+        current_progress = 0
+        
+    new_progress = max(0, min(100, current_progress + progress_delta))
+    curr["progress"] = new_progress
+    
+    if new_progress == 100 and curr.get("status") != globals().get("MISSION_COMPLETED", "Completed"):
+        complete_current_mission()
+    else:
+        sync_mission()
+        sync_brain()
+        if 'save_mission' in globals():
+            save_mission()
+
+def complete_current_mission():
+    curr = st.session_state.db.get("current_mission")
+    if not curr:
+        return
+        
+    curr["progress"] = 100
+    curr["status"] = globals().get("MISSION_COMPLETED", "Completed")
+    curr["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Automatically clear current_focus and track activity
+    st.session_state.brain["current_focus"] = None
+    st.session_state.brain["last_activity"] = f"Completed mission: {curr.get('title')}"
+    st.session_state.brain["recommended_action"] = "Find Weakness"
+    
+    sync_mission()
+    
+    # Clear active current_mission slot so we can transition cleanly
+    st.session_state.db["current_mission"] = None
+    
+    if 'save_mission' in globals():
         save_mission()
+        
+    # Generate next daily mission automatically when appropriate
+    ensure_daily_mission()
 
+def ensure_daily_mission():
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    curr = st.session_state.db.get("current_mission")
+    
+    # Keep active running missions
+    if curr and curr.get("status") != globals().get("MISSION_COMPLETED", "Completed") and not curr.get("completed_at"):
+        return
+        
+    # Prevent duplicate missions for today
+    missions = st.session_state.db.get("missions", [])
+    today_mission_exists = any(
+        m.get("date") == today_str or 
+        (m.get("created_at") and m.get("created_at").startswith(today_str)) 
+        for m in missions
+    )
+    
+    if not today_mission_exists and 'generate_daily_mission' in globals():
+        mission = generate_daily_mission()
+        if mission:
+            mission.setdefault("date", today_str)
+            mission.setdefault("progress", 0)
+            mission.setdefault("duration", 25)
+            mission.setdefault("status", globals().get("MISSION_PENDING", "Pending"))
+            mission.setdefault("reason", "")
+            mission.setdefault("started_at", None)
+            mission.setdefault("completed_at", None)
+            
+            st.session_state.db["missions"].append(mission)
+            st.session_state.db["current_mission"] = mission
+            st.session_state.brain["current_focus"] = mission.get("title")
+            st.session_state.brain["recommended_action"] = "Start Mission"
+            st.session_state.brain["last_activity"] = "Auto-generated daily mission"
+            
+            if 'save_mission' in globals():
+                save_mission()
+
+# Core automatic synchronizations on load
+update_recommended_topic()
+ensure_daily_mission()
+sync_mission()
+sync_brain()
+
+# Retain downstream variable compatibility
 mission = st.session_state.db.get("current_mission")
-if mission:
-    mission.setdefault("progress", 0)
-    mission.setdefault("duration", 25)
-    mission.setdefault("status", MISSION_PENDING)
-    mission.setdefault("reason", "")
-    mission.setdefault("started_at", None)
-    mission.setdefault("completed_at", None)
 
 # ==================== NAVIGATION CALLBACKS ====================
 def set_page(page_name):
@@ -657,8 +787,6 @@ if st.session_state.current_page == "📊 Dashboard":
         if mod_key.lower() in str(cmd_current_module).lower():
             cmd_ai_status = mod_status
             break
-
-    # Premium Dashboard Command Center Layout
     
     
     # Premium Live Command Bar -> Redesigned as Dynamic Live Activity Feed
