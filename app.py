@@ -1262,19 +1262,164 @@ if st.session_state.current_page == "📊 Dashboard":
             st.rerun()
 elif st.session_state.current_page == "💬 Study Chat":
     st.session_state.brain["current_module"] = "Study Chat"
-    section_header("💬", "Study Chat", "Ask anything about your Scaler journey. NexusAI remembers your learning context.", "#385C7A")
+    
+    brain = st.session_state.brain
+    curr_focus = brain.get("current_focus") if brain.get("current_focus") else "None"
+    rec_topic = brain.get("recommended_topic") if brain.get("recommended_topic") else "None"
+    curr_mod = brain.get("current_module") if brain.get("current_module") else "None"
+    msg_count = len(st.session_state.messages)
+
+    st.markdown("""
+    <style>
+    .chat-command-card {
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.7), rgba(30, 41, 59, 0.5));
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        border-radius: 16px;
+        padding: 20px 24px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        backdrop-filter: blur(10px);
+    }
+    .cmd-section {
+        display: flex;
+        gap: 32px;
+        flex-wrap: wrap;
+    }
+    .cmd-item {
+        display: flex;
+        flex-direction: column;
+    }
+    .cmd-label {
+        font-size: 0.75rem;
+        color: #94A3B8;
+        text-transform: uppercase;
+        font-weight: 700;
+        letter-spacing: 0.05em;
+        margin-bottom: 6px;
+    }
+    .cmd-value {
+        color: #F8FAFC;
+        font-size: 1.05rem;
+        font-weight: 600;
+    }
+    .ai-status-badge {
+        background: rgba(34, 197, 94, 0.15);
+        color: #4ADE80;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        padding: 8px 16px;
+        border-radius: 30px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.1);
+        white-space: nowrap;
+    }
+    .ai-status-badge::before {
+        content: '';
+        display: block;
+        width: 8px;
+        height: 8px;
+        background-color: #4ADE80;
+        border-radius: 50%;
+        box-shadow: 0 0 8px #4ADE80;
+    }
+    .session-panel {
+        background: rgba(30, 41, 59, 0.4);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 10px;
+        padding: 12px 20px;
+        display: flex;
+        gap: 24px;
+        margin-bottom: 24px;
+        font-size: 0.85rem;
+        color: #CBD5E1;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .session-stat {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .session-stat strong {
+        color: #F8FAFC;
+    }
+    .empty-state-title {
+        text-align: center;
+        color: #F8FAFC;
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-top: 40px;
+        margin-bottom: 10px;
+    }
+    .empty-state-subtitle {
+        text-align: center;
+        color: #94A3B8;
+        font-size: 1rem;
+        margin-bottom: 30px;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    st.markdown(f"""
+    <div class="chat-command-card">
+        <div class="cmd-section">
+            <div class="cmd-item">
+                <span class="cmd-label">Current Focus</span>
+                <span class="cmd-value">{curr_focus}</span>
+            </div>
+            <div class="cmd-item">
+                <span class="cmd-label">Recommended Topic</span>
+                <span class="cmd-value" style="color: #38BDF8;">{rec_topic}</span>
+            </div>
+            <div class="cmd-item">
+                <span class="cmd-label">Current Module</span>
+                <span class="cmd-value">{curr_mod}</span>
+            </div>
+        </div>
+        <div class="ai-status-badge">Ready</div>
+    </div>
+    <div class="session-panel">
+        <div class="session-stat">💬 <strong>{msg_count}</strong> Messages</div>
+        <div class="session-stat">🎯 Focus: <strong>{curr_focus}</strong></div>
+        <div class="session-stat">⚡ Next: <strong>{rec_topic}</strong></div>
+    </div>
+    """, unsafe_allow_html=True)
 
     for msg in st.session_state.messages:
         with st.chat_message(msg["role"]):
             st.write(msg["content"])
 
-    user_input = st.chat_input("Ask anything...")
+    suggestion_clicked = None
+    if msg_count == 0:
+        st.markdown('<div class="empty-state-title">Welcome to NexusAI Study Chat</div>', unsafe_allow_html=True)
+        st.markdown('<div class="empty-state-subtitle">Select a topic below or type your question to begin.</div>', unsafe_allow_html=True)
+        
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            if st.button("🧩 Explain Prefix Sum", use_container_width=True): suggestion_clicked = "Explain Prefix Sum"
+            if st.button("📝 Quiz me on Strings", use_container_width=True): suggestion_clicked = "Quiz me on Strings"
+        with c2:
+            if st.button("🐛 Help debug Java", use_container_width=True): suggestion_clicked = "Help debug Java"
+            if st.button("⏱ Explain Time Complexity", use_container_width=True): suggestion_clicked = "Explain Time Complexity"
+        with c3:
+            if st.button("📅 Create today's study plan", use_container_width=True): suggestion_clicked = "Create today's study plan"
+            if st.button("💼 Resume guidance", use_container_width=True): suggestion_clicked = "Resume guidance"
+            
+        st.markdown("<br>", unsafe_allow_html=True)
 
-    if user_input:
+    user_input = st.chat_input("Ask anything...")
+    active_input = user_input or suggestion_clicked
+
+    if active_input:
         st.session_state.brain["last_activity"] = "Asked a study question"
-        st.session_state.messages.append({"role": "user", "content": user_input})
+        st.session_state.messages.append({"role": "user", "content": active_input})
         with st.chat_message("user"):
-            st.write(user_input)
+            st.write(active_input)
 
         brain = st.session_state.brain
         brain_context = f"CURRENT AI STATE\nCurrent Focus: {brain.get('current_focus')}\nRecommended Topic: {brain.get('recommended_topic')}\nCurrent Module: {brain.get('current_module')}\nLast Activity: {brain.get('last_activity')}\n"
@@ -1304,12 +1449,12 @@ RESPONSE FORMAT:
 SCOPE: Only answer questions about software engineering, DSA, Java, Python, system design, Scaler curriculum, career strategy, and AI/ML from Module 5. Redirect anything outside this scope."""
 
         with st.chat_message("assistant"):
-            with st.spinner("Thinking..."):
+            with st.spinner("🧠 NexusAI is reasoning..."):
                 response = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
                     messages=[
                         {"role": "system", "content": system_context},
-                        {"role": "user", "content": user_input}
+                        {"role": "user", "content": active_input}
                     ]
                 )
                 reply = response.choices[0].message.content
